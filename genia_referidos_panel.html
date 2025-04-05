@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>GENIA | Sistema de Referidos</title>
+  <style>
+    body {
+      background: #0e0e0e;
+      font-family: sans-serif;
+      color: #fff;
+      margin: 0;
+      padding: 40px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #1a1a1a;
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid #67f8c0;
+    }
+    h2 {
+      color: #67f8c0;
+      margin-top: 0;
+    }
+    .refer-link {
+      background: #101010;
+      border: 1px solid #444;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-size: 0.95rem;
+    }
+    .btn {
+      background: #67f8c0;
+      color: #101010;
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .stats {
+      background: #131313;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .stats p {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Invita y gana con GENIA</h2>
+  <p>Comparte tu enlace único y gana contenido, embudos y upgrades automáticos.</p>
+
+  <div class="refer-link">
+    Tu enlace de referidos:<br>
+    <code>https://genia.app?ref=christhian123</code>
+    <button class="btn" onclick="navigator.clipboard.writeText('https://genia.app?ref=christhian123')">Copiar enlace</button>
+  </div>
+
+  <div class="stats">
+    <h3>Tu progreso</h3>
+    <p>Referidos activos: <strong>3</strong></p>
+    <p>Recompensas ganadas: <strong>+7 días Pro</strong></p>
+    <p>Próxima recompensa: <strong>5 referidos = Upgrade a GENIA Pro</strong></p>
+  </div>
+</div>
+
+</body>
+</html>

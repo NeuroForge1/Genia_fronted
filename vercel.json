@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "name": "genia-platform",
+  "builds": [
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/admin", "dest": "/genia_admin_panel.html" },
+    { "src": "/tracker", "dest": "/genia_ai_tracker.html" },
+    { "src": "/referidos", "dest": "/genia_referidos_panel.html" },
+    { "src": "/marketplace", "dest": "/genia_marketplace.html" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}

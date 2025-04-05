@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>GENIA Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #101010;
+      color: #fff;
+    }
+    header {
+      background: #1e1e1e;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.5rem;
+      border-bottom: 2px solid #67f8c0;
+    }
+    .dashboard {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    .stats, .users, .actions {
+      background: #1b1b1b;
+      margin-bottom: 30px;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    h2 {
+      color: #67f8c0;
+      margin-top: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #333;
+      text-align: left;
+    }
+    .highlight {
+      color: #67f8c0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<header>GENIA Admin Panel</header>
+
+<div class="dashboard">
+  <div class="stats">
+    <h2>Estadísticas del sistema</h2>
+    <p>Total de usuarios activos: <span class="highlight">89</span></p>
+    <p>Créditos usados este mes: <span class="highlight">15,400</span></p>
+    <p>Embudos generados: <span class="highlight">127</span></p>
+    <p>Contenidos creados: <span class="highlight">412</span></p>
+    <p>Campañas lanzadas: <span class="highlight">51</span></p>
+  </div>
+
+  <div class="users">
+    <h2>Usuarios registrados</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Negocio</th>
+          <th>Plan</th>
+          <th>Clones Activos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Andrea Díaz</td>
+          <td>andrea@email.com</td>
+          <td>Cursos de Yoga</td>
+          <td>Pro</td>
+          <td>CEO, Funnel, Content</td>
+        </tr>
+        <tr>
+          <td>Daniel Ruiz</td>
+          <td>daniel@email.com</td>
+          <td>Consultoría Legal</td>
+          <td>Starter</td>
+          <td>CEO</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <h2>Alertas recientes</h2>
+    <ul>
+      <li>⚠️ Daniel Ruiz superó el 90% de sus créditos disponibles.</li>
+      <li>✅ Se activó campaña Meta Ads para Andrea Díaz.</li>
+      <li>⏳ Andrea tiene prueba gratuita con 2 días restantes.</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

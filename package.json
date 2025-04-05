@@ -1,0 +1,15 @@
+{
+  "name": "genia-platform",
+  "version": "1.0.0",
+  "description": "GENIA - Plataforma SaaS con IA para automatización de contenido y tareas",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "dependencies": {
+    "serve": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

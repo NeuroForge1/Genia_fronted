@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GENIA - Tu Sistema de Crecimiento con IA</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#67f8c0">
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script src="pwa-register.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #0e0e0e;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: 60px auto;
+      padding: 30px;
+      text-align: center;
+      background: #1c1c1c;
+      border-radius: 12px;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #67f8c0;
+    }
+    p {
+      font-size: 1rem;
+      margin-bottom: 30px;
+    }
+    input, button {
+      padding: 12px;
+      margin: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+    }
+    input {
+      width: 80%;
+    }
+    button {
+      background: #67f8c0;
+      color: #000;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Activa tu GENIA gratis por 7 días</h1>
+    <p>Tu sistema de crecimiento automatizado con IA. Sin riesgo. Sin esfuerzo.</p>
+
+    <form action="https://hook.make.com/genia_onboarding_webhook" method="POST">
+      <input type="text" name="nombre" placeholder="Tu nombre completo" required><br>
+      <input type="email" name="email" placeholder="Tu correo electrónico" required><br>
+      <input type="text" name="negocio" placeholder="¿Qué vendes? (opcional)"><br>
+      <button type="submit">Probar ahora gratis</button>
+    </form>
+
+    <p style="margin-top: 20px; font-size: 0.9rem; color: #999;">
+      No se te cobrará nada hoy. El cargo se realiza después del periodo de prueba. Puedes cancelar en cualquier momento.
+    </p>
+  </div>
+</body>
+</html>

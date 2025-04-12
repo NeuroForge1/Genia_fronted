@@ -18,4 +18,4 @@ const GENIA_CONFIG = {
     marketplaceWebhook: "https://hook.make.com/genia_marketplace_webhook",
     aiTrackerWebhook: "https://hook.make.com/genia_ai_tracker_webhook"
   }
-};
+};//

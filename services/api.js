@@ -19,7 +19,7 @@ const defaultOptions = {
 const apiClient = {
   /**
    * Realiza una solicitud GET
-   * @param {string} endpoint - Ruta del endpoint (debe incluir /api/ si es necesario)
+   * @param {string} endpoint - Ruta del endpoint (se añadirá /api/ automáticamente si no lo incluye)
    * @param {Object} options - Opciones adicionales para fetch
    * @returns {Promise} - Promesa con la respuesta
    */
@@ -32,7 +32,7 @@ const apiClient = {
 
   /**
    * Realiza una solicitud POST
-   * @param {string} endpoint - Ruta del endpoint (debe incluir /api/ si es necesario)
+   * @param {string} endpoint - Ruta del endpoint (se añadirá /api/ automáticamente si no lo incluye)
    * @param {Object} data - Datos a enviar en el cuerpo de la solicitud
    * @param {Object} options - Opciones adicionales para fetch
    * @returns {Promise} - Promesa con la respuesta
@@ -47,7 +47,7 @@ const apiClient = {
 
   /**
    * Realiza una solicitud PUT
-   * @param {string} endpoint - Ruta del endpoint (debe incluir /api/ si es necesario)
+   * @param {string} endpoint - Ruta del endpoint (se añadirá /api/ automáticamente si no lo incluye)
    * @param {Object} data - Datos a enviar en el cuerpo de la solicitud
    * @param {Object} options - Opciones adicionales para fetch
    * @returns {Promise} - Promesa con la respuesta
@@ -62,7 +62,7 @@ const apiClient = {
 
   /**
    * Realiza una solicitud DELETE
-   * @param {string} endpoint - Ruta del endpoint (debe incluir /api/ si es necesario)
+   * @param {string} endpoint - Ruta del endpoint (se añadirá /api/ automáticamente si no lo incluye)
    * @param {Object} options - Opciones adicionales para fetch
    * @returns {Promise} - Promesa con la respuesta
    */
@@ -80,7 +80,14 @@ const apiClient = {
    * @returns {Promise} - Promesa con la respuesta
    */
   async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    // Asegurarse de que el endpoint comience con /api/ si no lo incluye ya
+    const formattedEndpoint = endpoint.startsWith('/api/') 
+      ? endpoint 
+      : endpoint.startsWith('/') 
+        ? `/api${endpoint}` 
+        : `/api/${endpoint}`;
+    
+    const url = `${API_BASE_URL}${formattedEndpoint}`;
     
     const requestOptions = {
       ...defaultOptions,

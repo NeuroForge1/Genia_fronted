@@ -60,11 +60,12 @@
   <div class="container">
     <h1>Activa tu GENIA gratis por 7 días</h1>
     <p>Tu sistema de crecimiento automatizado con IA. Sin riesgo. Sin esfuerzo.</p>
-    <form id="registroForm">
+    <!-- Eliminado el atributo action del formulario para evitar que sobrescriba el comportamiento JavaScript -->
+    <form id="registroForm" onsubmit="return false;">
       <input type="text" id="nombre" name="nombre" placeholder="Tu nombre completo" required><br>
       <input type="email" id="email" name="email" placeholder="Tu correo electrónico" required><br>
       <input type="text" id="negocio" name="negocio" placeholder="¿Qué vendes? (opcional)"><br>
-      <button type="submit">Probar ahora gratis</button>
+      <button type="button" id="submitButton">Probar ahora gratis</button>
       <p id="errorMessage" class="error-message">Ha ocurrido un error. Por favor, intenta nuevamente.</p>
       <p id="successMessage" class="success-message">Registro exitoso. Redirigiendo al dashboard...</p>
     </form>
@@ -80,19 +81,28 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('registroForm');
+      const submitButton = document.getElementById('submitButton');
       const errorMessage = document.getElementById('errorMessage');
       const successMessage = document.getElementById('successMessage');
       
-      form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
+      // Usar el botón en lugar del evento submit del formulario
+      submitButton.addEventListener('click', async function() {
         const nombre = document.getElementById('nombre').value;
         const email = document.getElementById('email').value;
         const negocio = document.getElementById('negocio').value;
         
+        // Validación básica
+        if (!nombre || !email) {
+          errorMessage.textContent = 'Por favor, completa todos los campos requeridos.';
+          errorMessage.style.display = 'block';
+          return;
+        }
+        
         errorMessage.style.display = 'none';
         
         try {
+          console.log('Iniciando registro con Supabase...');
+          
           // Registrar usuario en Supabase
           const { user, error } = await supabaseService.signUp(email, 'Genia2024!', {
             nombre: nombre,
@@ -106,16 +116,19 @@
             return;
           }
           
+          console.log('Registro exitoso:', user);
+          
           // Mostrar mensaje de éxito
           successMessage.style.display = 'block';
           
           // Redirigir al dashboard después de 2 segundos
           setTimeout(() => {
+            console.log('Redirigiendo al dashboard...');
             window.location.href = '/dashboard';
           }, 2000);
           
         } catch (error) {
-          console.error('Error:', error);
+          console.error('Error inesperado:', error);
           errorMessage.textContent = 'Ha ocurrido un error inesperado. Por favor, intenta nuevamente.';
           errorMessage.style.display = 'block';
         }

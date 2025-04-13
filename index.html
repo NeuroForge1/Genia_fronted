@@ -1,22 +1,16 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GENIA - Tu Sistema de Crecimiento con IA</title>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#67f8c0">
-  <script src="config.js"></script>
-  <script src="script.js"></script>
-  <script src="pwa-register.js"></script>
   <style>
     body {
       font-family: sans-serif;
       background: #0e0e0e;
-      color: #ffffff;
       margin: 0;
       padding: 0;
+      color: #ffffff;
     }
     .container {
       max-width: 700px;
@@ -50,27 +44,83 @@
       color: #000;
       cursor: pointer;
     }
+    .error-message {
+      color: #ff6b6b;
+      margin-top: 10px;
+      display: none;
+    }
+    .success-message {
+      color: #67f8c0;
+      margin-top: 10px;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Activa tu GENIA gratis por 7 días</h1>
     <p>Tu sistema de crecimiento automatizado con IA. Sin riesgo. Sin esfuerzo.</p>
-
-    <form action="https://hook.eu2.make.com/mgmz3k8mvpw9jts58koqwjbyvxpv2whq" method="POST">
-      <input type="text" name="nombre" placeholder="Tu nombre completo" required><br>
-      <input type="email" name="email" placeholder="Tu correo electrónico" required><br>
-      <input type="text" name="negocio" placeholder="¿Qué vendes? (opcional)"><br>
+    <form id="registroForm">
+      <input type="text" id="nombre" name="nombre" placeholder="Tu nombre completo" required><br>
+      <input type="email" id="email" name="email" placeholder="Tu correo electrónico" required><br>
+      <input type="text" id="negocio" name="negocio" placeholder="¿Qué vendes? (opcional)"><br>
       <button type="submit">Probar ahora gratis</button>
+      <p id="errorMessage" class="error-message">Ha ocurrido un error. Por favor, intenta nuevamente.</p>
+      <p id="successMessage" class="success-message">Registro exitoso. Redirigiendo al dashboard...</p>
     </form>
-
     <p style="margin-top: 20px; font-size: 0.9rem; color: #999;">
       No se te cobrará nada hoy. El cargo se realiza después del periodo de prueba. Puedes cancelar en cualquier momento.
     </p>
   </div>
-
-    <!-- Scripts GENIA API Integration -->
-    <script src="services/api_integration.js"></script>
-    <script src="enhanced_script.js"></script>
+  
+  <!-- Scripts para la autenticación con Supabase -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="services/supabaseService.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('registroForm');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const nombre = document.getElementById('nombre').value;
+        const email = document.getElementById('email').value;
+        const negocio = document.getElementById('negocio').value;
+        
+        errorMessage.style.display = 'none';
+        
+        try {
+          // Registrar usuario en Supabase
+          const { user, error } = await supabaseService.signUp(email, 'Genia2024!', {
+            nombre: nombre,
+            negocio: negocio
+          });
+          
+          if (error) {
+            console.error('Error de registro:', error);
+            errorMessage.textContent = error.message || 'Error al registrar. Por favor, intenta nuevamente.';
+            errorMessage.style.display = 'block';
+            return;
+          }
+          
+          // Mostrar mensaje de éxito
+          successMessage.style.display = 'block';
+          
+          // Redirigir al dashboard después de 2 segundos
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 2000);
+          
+        } catch (error) {
+          console.error('Error:', error);
+          errorMessage.textContent = 'Ha ocurrido un error inesperado. Por favor, intenta nuevamente.';
+          errorMessage.style.display = 'block';
+        }
+      });
+    });
+  </script>
 </body>
 </html>

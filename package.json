@@ -1,15 +1,24 @@
 {
-  "name": "genia-platform",
+  "name": "genia-nextjs",
   "version": "1.0.0",
-  "description": "GENIA - Plataforma SaaS con IA para automatización de contenido y tareas",
-  "main": "index.html",
+  "description": "Frontend de GENIA migrado a Next.js",
+  "main": "index.js",
   "scripts": {
-    "start": "serve ."
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
+  "keywords": [
+    "nextjs",
+    "genia",
+    "frontend"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "serve": "^14.0.0"
-  },
-  "engines": {
-    "node": ">=14.0.0"
+    "next": "^13.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import { useState } from 'react';
 import Link from 'next/link';
+import supabaseService from '../services/supabaseService';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -8,6 +9,8 @@ export default function Login() {
     password: '',
     rememberMe: false
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -19,25 +22,29 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+    
     try {
-      // Mostrar indicador de carga
-      document.querySelector('button[type="submit"]').innerHTML = 'Iniciando sesión...';
-      document.querySelector('button[type="submit"]').disabled = true;
+      // Iniciar sesión con Supabase
+      const { session, user } = await supabaseService.signIn(formData.email, formData.password);
       
-      // Implementar llamada a API cuando esté disponible
-      console.log('Datos de login enviados:', formData);
-      
-      // Simular redirección al dashboard
-      setTimeout(() => {
+      if (session) {
+        // Guardar información de sesión si "recordarme" está activado
+        if (formData.rememberMe) {
+          localStorage.setItem('genia_user', JSON.stringify(user));
+        }
+        
+        // Redirigir al dashboard
         window.location.href = '/dashboard';
-      }, 1500);
+      } else {
+        setError('Error de autenticación. Por favor, verifica tus credenciales.');
+      }
     } catch (error) {
       console.error('Error de login:', error);
-      alert('Error al iniciar sesión. Por favor, intenta nuevamente.');
-      
-      // Restaurar botón
-      document.querySelector('button[type="submit"]').innerHTML = 'Iniciar Sesión';
-      document.querySelector('button[type="submit"]').disabled = false;
+      setError(error.message || 'Error al iniciar sesión. Por favor, intenta nuevamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,6 +81,11 @@ export default function Login() {
             <h3>Iniciar Sesión</h3>
           </div>
           <div className="card-body">
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="email">Email</label>
@@ -84,6 +96,7 @@ export default function Login() {
                   value={formData.email}
                   onChange={handleChange}
                   required 
+                  disabled={loading}
                 />
               </div>
               <div className="form-group">
@@ -95,6 +108,7 @@ export default function Login() {
                   value={formData.password}
                   onChange={handleChange}
                   required 
+                  disabled={loading}
                 />
               </div>
               <div className="form-check">
@@ -104,11 +118,14 @@ export default function Login() {
                   name="rememberMe"
                   checked={formData.rememberMe}
                   onChange={handleChange}
+                  disabled={loading}
                 />
                 <label htmlFor="rememberMe">Recordarme</label>
               </div>
               <div className="form-button">
-                <button type="submit">Iniciar Sesión</button>
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                </button>
               </div>
             </form>
             <div className="forgot-password">
@@ -195,6 +212,14 @@ export default function Login() {
           padding: 30px;
           background-color: white;
         }
+        .error-message {
+          background-color: #ffebee;
+          color: #c62828;
+          padding: 10px;
+          border-radius: 4px;
+          margin-bottom: 20px;
+          font-size: 14px;
+        }
         .form-group {
           margin-bottom: 20px;
         }
@@ -227,6 +252,10 @@ export default function Login() {
           border-radius: 4px;
           font-size: 16px;
           cursor: pointer;
+        }
+        .form-button button:disabled {
+          background-color: #a5b4fc;
+          cursor: not-allowed;
         }
         .forgot-password {
           text-align: center;

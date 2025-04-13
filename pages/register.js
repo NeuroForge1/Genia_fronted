@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import { useState } from 'react';
 import Link from 'next/link';
+import supabaseService from '../services/supabaseService';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,8 @@ export default function Register() {
     confirmPassword: '',
     terms: false
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -26,30 +29,62 @@ export default function Register() {
     
     // Validar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
-      alert('Las contraseñas no coinciden');
+      setError('Las contraseñas no coinciden');
       return;
     }
     
+    setError(null);
+    setLoading(true);
+    
     try {
-      // Mostrar indicador de carga
-      document.querySelector('button[type="submit"]').innerHTML = 'Creando cuenta...';
-      document.querySelector('button[type="submit"]').disabled = true;
+      // Registrar usuario con Supabase
+      const userData = {
+        nombre: formData.nombre,
+        negocio: formData.negocio,
+        telefono: formData.telefono
+      };
       
-      // Implementar llamada a API cuando esté disponible
-      console.log('Datos de registro enviados:', formData);
+      const { user, session } = await supabaseService.signUp(
+        formData.email, 
+        formData.password,
+        userData
+      );
       
-      // Simular éxito y redirección
-      setTimeout(() => {
+      if (user) {
+        // También registrar en el backend para datos adicionales
+        try {
+          await fetch('https://genia-backend.onrender.com/api/users/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              nombre: formData.nombre,
+              email: formData.email,
+              negocio: formData.negocio,
+              telefono: formData.telefono,
+              supabase_id: user.id
+            }),
+          });
+        } catch (backendError) {
+          console.error('Error al registrar en backend:', backendError);
+          // Continuamos aunque falle el backend, ya que el usuario está en Supabase
+        }
+        
         alert('Cuenta creada correctamente. Por favor, inicia sesión.');
         window.location.href = '/login';
-      }, 1500);
+      } else {
+        setError('Error al crear la cuenta. Por favor, intenta nuevamente.');
+      }
     } catch (error) {
       console.error('Error de registro:', error);
-      alert('Error al crear la cuenta. Por favor, intenta nuevamente.');
-      
-      // Restaurar botón
-      document.querySelector('button[type="submit"]').innerHTML = 'Crear cuenta';
-      document.querySelector('button[type="submit"]').disabled = false;
+      if (error.message.includes('already registered')) {
+        setError('Este email ya está registrado. Por favor, utiliza otro o inicia sesión.');
+      } else {
+        setError(error.message || 'Error al crear la cuenta. Por favor, intenta nuevamente.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,6 +121,11 @@ export default function Register() {
             <h3>Crear Cuenta</h3>
           </div>
           <div className="card-body">
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="nombre">Nombre completo</label>
@@ -96,6 +136,7 @@ export default function Register() {
                   value={formData.nombre}
                   onChange={handleChange}
                   required 
+                  disabled={loading}
                 />
               </div>
               <div className="form-group">
@@ -107,6 +148,7 @@ export default function Register() {
                   value={formData.email}
                   onChange={handleChange}
                   required 
+                  disabled={loading}
                 />
               </div>
               <div className="form-group">
@@ -118,6 +160,7 @@ export default function Register() {
                   value={formData.negocio}
                   onChange={handleChange}
                   required 
+                  disabled={loading}
                 />
               </div>
               <div className="form-group">
@@ -128,6 +171,7 @@ export default function Register() {
                   name="telefono"
                   value={formData.telefono}
                   onChange={handleChange}
+                  disabled={loading}
                 />
               </div>
               <div className="form-group">
@@ -139,6 +183,7 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   required 
+                  disabled={loading}
                 />
               </div>
               <div className="form-group">
@@ -150,6 +195,7 @@ export default function Register() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required 
+                  disabled={loading}
                 />
               </div>
               <div className="form-check">
@@ -160,11 +206,14 @@ export default function Register() {
                   checked={formData.terms}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
                 <label htmlFor="terms">Acepto los <Link href="/terms">términos y condiciones</Link></label>
               </div>
               <div className="form-button">
-                <button type="submit">Crear cuenta</button>
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+                </button>
               </div>
             </form>
             <hr />
@@ -248,6 +297,14 @@ export default function Register() {
           padding: 30px;
           background-color: white;
         }
+        .error-message {
+          background-color: #ffebee;
+          color: #c62828;
+          padding: 10px;
+          border-radius: 4px;
+          margin-bottom: 20px;
+          font-size: 14px;
+        }
         .form-group {
           margin-bottom: 20px;
         }
@@ -284,6 +341,10 @@ export default function Register() {
           border-radius: 4px;
           font-size: 16px;
           cursor: pointer;
+        }
+        .form-button button:disabled {
+          background-color: #a5b4fc;
+          cursor: not-allowed;
         }
         hr {
           margin: 20px 0;

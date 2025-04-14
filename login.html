@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Genia - Iniciar Sesión</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Cargar Supabase desde CDN -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <!-- Cargar Supabase desde CDN con versión específica para mayor estabilidad -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js"></script>
+  
   <style>
     /* Estilos adicionales para la página de login */
     .login-container {
@@ -56,7 +58,44 @@
       border-top: 1px solid #eee;
       padding-top: 15px;
     }
+    .loading-indicator {
+      display: none;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .loading-indicator::after {
+      content: "...";
+      animation: dots 1.5s steps(5, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: "."; }
+      40% { content: ".."; }
+      60%, 100% { content: "..."; }
+    }
   </style>
+  
+  <!-- Script de inicialización temprana para garantizar disponibilidad de Supabase -->
+  <script>
+    // Inicializar Supabase inmediatamente para asegurar su disponibilidad
+    try {
+      console.log('Inicializando Supabase tempranamente...');
+      
+      // Constantes de Supabase
+      const SUPABASE_URL = "https://axfcmtrhsvmtzqqhxwul.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ";
+      
+      // Verificar si supabase está disponible globalmente
+      if (typeof supabase !== 'undefined') {
+        // Crear cliente de Supabase globalmente
+        window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Cliente Supabase inicializado tempranamente:', window.supabaseClient);
+      } else {
+        console.warn('Supabase no está disponible todavía, se inicializará más tarde');
+      }
+    } catch (error) {
+      console.error('Error en inicialización temprana de Supabase:', error);
+    }
+  </script>
 </head>
 <body>
   <header>
@@ -83,17 +122,18 @@
       <form id="loginForm">
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" name="email" required>
+          <input type="email" id="email" name="email" required autocomplete="email">
         </div>
         <div class="form-group">
           <label for="password">Contraseña</label>
-          <input type="password" id="password" name="password" required>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
         </div>
         <div class="form-group">
           <input type="checkbox" id="remember" name="remember">
           <label for="remember" style="display: inline;">Recordarme</label>
         </div>
-        <button type="submit" class="btn-primary">Iniciar Sesión</button>
+        <button type="submit" class="btn-primary" id="loginButton">Iniciar Sesión</button>
+        <div id="loadingIndicator" class="loading-indicator">Iniciando sesión</div>
         <p id="errorMessage" class="error-message">Error al iniciar sesión. Por favor, verifica tus credenciales.</p>
         <p id="successMessage" class="success-message">Inicio de sesión exitoso. Redirigiendo...</p>
       </form>
@@ -110,127 +150,288 @@
   </footer>
 
   <script>
-    // Configuración de GENIA
-    const GENIA_CONFIG = {
-      supabase: {
-        url: 'https://axfcmtrhsvmtzqqhxwul.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4NzM1NzAsImV4cCI6MjAyODQ0OTU3MH0.Nt8YuKDLCCK-QaU9c1ZcqvIpJXVCvRYNGrNQXGLYRXY'
-      },
-      api: {
-        baseUrl: 'https://genia-backend.onrender.com'
-      }
-    };
-
-    // Crear cliente de Supabase
-    const supabase = supabase.createClient(
-      GENIA_CONFIG.supabase.url,
-      GENIA_CONFIG.supabase.anonKey
-    );
-
-    // Cliente API
-    const apiClient = {
-      // Iniciar sesión
-      login: async function(email, password) {
-        try {
-          console.log('Iniciando sesión con:', email);
-          
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-          
-          if (error) throw error;
-          
-          console.log('Sesión iniciada correctamente');
-          
-          // Guardar token en localStorage
-          localStorage.setItem('genia_auth_token', data.session.access_token);
-          
-          // Redirigir al dashboard
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 1000);
-          
-          return data;
-        } catch (error) {
-          console.error('Error de autenticación:', error);
-          throw error;
-        }
-      },
-
-      // Registrar usuario
-      register: async function(userData) {
-        try {
-          console.log('Registrando usuario:', userData.email);
-          
-          // Registrar usuario en Supabase
-          const { data, error } = await supabase.auth.signUp({
-            email: userData.email,
-            password: userData.password,
-            options: {
-              data: {
-                nombre: userData.nombre,
-                negocio: userData.negocio,
-                telefono: userData.telefono || ''
-              }
-            }
-          });
-          
-          if (error) throw error;
-          
-          console.log('Usuario registrado correctamente');
-          
-          // Guardar token en localStorage si está disponible
-          if (data.session) {
-            localStorage.setItem('genia_auth_token', data.session.access_token);
+    // Función de inicialización para asegurar que apiClient y supabase estén siempre disponibles
+    function inicializarGenia() {
+      try {
+        console.log('Inicializando Genia Auth...');
+        
+        // Constantes de Supabase
+        const SUPABASE_URL = "https://axfcmtrhsvmtzqqhxwul.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ";
+        
+        // Configuración de GENIA
+        window.GENIA_CONFIG = {
+          supabase: {
+            url: SUPABASE_URL,
+            anonKey: SUPABASE_ANON_KEY
+          },
+          api: {
+            baseUrl: 'https://genia-backend.onrender.com'
           }
+        };
+        
+        // Verificar si supabase está disponible globalmente
+        if (typeof supabase === 'undefined') {
+          console.error('Error: Supabase no está disponible. Intentando cargar de nuevo...');
           
-          // Redirigir al dashboard
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 1000);
-          
-          return data;
-        } catch (error) {
-          console.error('Error de registro:', error);
-          throw error;
+          // Si no está disponible, crear un elemento script y cargarlo de nuevo
+          const supabaseScript = document.createElement('script');
+          supabaseScript.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js";
+          supabaseScript.async = false;
+          supabaseScript.onload = function() {
+            console.log('Supabase cargado correctamente desde script dinámico');
+            // Crear cliente después de cargar
+            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Cliente Supabase creado:', window.supabaseClient);
+            // Inicializar apiClient después de tener supabase
+            inicializarApiClient(window.supabaseClient);
+          };
+          supabaseScript.onerror = function() {
+            console.error('Error al cargar Supabase desde script dinámico');
+            // Implementar fallback para autenticación
+            implementarFallbackAuth();
+          };
+          document.head.appendChild(supabaseScript);
+        } else {
+          // Si supabase está disponible pero el cliente no se ha creado aún
+          if (!window.supabaseClient) {
+            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Cliente Supabase creado:', window.supabaseClient);
+          }
+          // Inicializar apiClient
+          inicializarApiClient(window.supabaseClient);
         }
-      },
-
-      // Cerrar sesión
-      logout: async function() {
-        try {
-          const { error } = await supabase.auth.signOut();
-          
-          if (error) throw error;
-          
-          // Eliminar token de localStorage
-          localStorage.removeItem('genia_auth_token');
-          
-          // Redirigir a la página de inicio
-          window.location.href = '/';
-          
-          return true;
-        } catch (error) {
-          console.error('Error al cerrar sesión:', error);
-          throw error;
-        }
-      },
-
-      // Obtener token de autenticación
-      getToken: function() {
-        return localStorage.getItem('genia_auth_token') || '';
-      },
-
-      // Verificar si el usuario está autenticado
-      isAuthenticated: function() {
-        return !!this.getToken();
+      } catch (error) {
+        console.error('Error en inicialización de Genia Auth:', error);
+        // Implementar fallback para autenticación
+        implementarFallbackAuth();
       }
-    };
+    }
+    
+    // Función para inicializar apiClient
+    function inicializarApiClient(supabaseClient) {
+      try {
+        // Implementación del cliente API y asignarlo globalmente
+        window.apiClient = {
+          // Iniciar sesión
+          login: async function(email, password) {
+            try {
+              console.log('Iniciando sesión con:', email);
+              
+              if (!supabaseClient) {
+                throw new Error('Cliente Supabase no disponible');
+              }
+              
+              const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+              });
+              
+              if (error) throw error;
+              
+              console.log('Sesión iniciada correctamente');
+              
+              // Guardar token en localStorage
+              localStorage.setItem('genia_auth_token', data.session.access_token);
+              
+              // Redirigir al dashboard
+              setTimeout(() => {
+                window.location.href = '/dashboard';
+              }, 1000);
+              
+              return data;
+            } catch (error) {
+              console.error('Error de autenticación:', error);
+              throw error;
+            }
+          },
+
+          // Registrar usuario
+          register: async function(userData) {
+            try {
+              console.log('Registrando usuario:', userData.email);
+              
+              if (!supabaseClient) {
+                throw new Error('Cliente Supabase no disponible');
+              }
+              
+              // Registrar usuario en Supabase
+              const { data, error } = await supabaseClient.auth.signUp({
+                email: userData.email,
+                password: userData.password,
+                options: {
+                  data: {
+                    nombre: userData.nombre,
+                    negocio: userData.negocio,
+                    telefono: userData.telefono || ''
+                  }
+                }
+              });
+              
+              if (error) throw error;
+              
+              console.log('Usuario registrado correctamente');
+              
+              // Guardar token en localStorage si está disponible
+              if (data.session) {
+                localStorage.setItem('genia_auth_token', data.session.access_token);
+              }
+              
+              // Redirigir al dashboard
+              setTimeout(() => {
+                window.location.href = '/dashboard';
+              }, 1000);
+              
+              return data;
+            } catch (error) {
+              console.error('Error de registro:', error);
+              throw error;
+            }
+          },
+
+          // Cerrar sesión
+          logout: async function() {
+            try {
+              if (!supabaseClient) {
+                throw new Error('Cliente Supabase no disponible');
+              }
+              
+              const { error } = await supabaseClient.auth.signOut();
+              
+              if (error) throw error;
+              
+              // Eliminar token de localStorage
+              localStorage.removeItem('genia_auth_token');
+              
+              // Redirigir a la página de inicio
+              window.location.href = '/';
+              
+              return true;
+            } catch (error) {
+              console.error('Error al cerrar sesión:', error);
+              throw error;
+            }
+          },
+
+          // Obtener token de autenticación
+          getToken: function() {
+            return localStorage.getItem('genia_auth_token') || '';
+          },
+
+          // Verificar si el usuario está autenticado
+          isAuthenticated: function() {
+            return !!this.getToken();
+          },
+          
+          // Método POST genérico para compatibilidad con implementación anterior
+          post: async function(endpoint, data) {
+            console.log('apiClient.post llamado con endpoint:', endpoint);
+            
+            try {
+              // Manejar autenticación
+              if (endpoint === '/auth/login') {
+                return await this.login(data.email, data.password);
+              } 
+              // Para otros endpoints, implementar según sea necesario
+              console.error('Endpoint no implementado:', endpoint);
+              return Promise.reject(new Error('Endpoint no implementado'));
+            } catch (error) {
+              console.error('Error en apiClient.post:', error);
+              throw error;
+            }
+          }
+        };
+        
+        console.log('apiClient inicializado globalmente:', window.apiClient);
+      } catch (error) {
+        console.error('Error al inicializar apiClient:', error);
+        implementarFallbackAuth();
+      }
+    }
+    
+    // Función para implementar autenticación de respaldo si todo falla
+    function implementarFallbackAuth() {
+      console.warn('Implementando autenticación de respaldo...');
+      
+      // Crear un objeto de respaldo para autenticación directa
+      window.authFallback = {
+        login: async function(email, password) {
+          try {
+            // Intentar autenticación directa con la API backend
+            const response = await fetch('https://genia-backend.onrender.com/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ email, password })
+            });
+            
+            if (!response.ok) {
+              throw new Error('Error en la autenticación');
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.token) {
+              localStorage.setItem('genia_auth_token', data.token);
+              localStorage.setItem('genia_user', JSON.stringify(data.user || {}));
+              return data;
+            } else {
+              throw new Error('Respuesta de autenticación inválida');
+            }
+          } catch (error) {
+            console.error('Error en autenticación de respaldo:', error);
+            throw error;
+          }
+        }
+      };
+      
+      // Crear apiClient de respaldo que use authFallback
+      window.apiClient = {
+        login: async function(email, password) {
+          try {
+            const result = await window.authFallback.login(email, password);
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 1000);
+            return result;
+          } catch (error) {
+            throw error;
+          }
+        },
+        post: async function(endpoint, data) {
+          if (endpoint === '/auth/login') {
+            return await this.login(data.email, data.password);
+          }
+          return Promise.reject(new Error('Endpoint no implementado en respaldo'));
+        },
+        getToken: function() {
+          return localStorage.getItem('genia_auth_token') || '';
+        },
+        isAuthenticated: function() {
+          return !!this.getToken();
+        }
+      };
+      
+      console.log('apiClient de respaldo inicializado:', window.apiClient);
+    }
+    
+    // Iniciar el proceso de inicialización inmediatamente
+    inicializarGenia();
 
     // Manejar el envío del formulario de login
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOMContentLoaded: Verificando apiClient', window.apiClient);
+      
+      // Si apiClient no está disponible después de cargar el DOM, intentar inicializar de nuevo
+      if (!window.apiClient) {
+        console.warn('apiClient no disponible en DOMContentLoaded, reiniciando inicialización...');
+        inicializarGenia();
+      }
+      
       const loginForm = document.getElementById('loginForm');
+      const loginButton = document.getElementById('loginButton');
+      const loadingIndicator = document.getElementById('loadingIndicator');
       const errorMessage = document.getElementById('errorMessage');
       const successMessage = document.getElementById('successMessage');
       
@@ -240,23 +441,110 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         
-        // Ocultar mensajes previos
+        // Ocultar mensajes previos y mostrar indicador de carga
         errorMessage.style.display = 'none';
         successMessage.style.display = 'none';
+        loginButton.disabled = true;
+        loginButton.textContent = 'Procesando...';
+        loadingIndicator.style.display = 'block';
         
         try {
-          // Iniciar sesión con apiClient
-          await apiClient.login(email, password);
+          console.log('Intentando iniciar sesión con:', email);
           
-          // Mostrar mensaje de éxito
-          successMessage.style.display = 'block';
-          
+          // Verificar nuevamente que apiClient esté disponible
+          if (!window.apiClient) {
+            console.error('apiClient todavía no está definido. Implementando solución de emergencia...');
+            
+            // Implementar solución de emergencia directamente en el evento
+            try {
+              // Intentar cargar Supabase de emergencia
+              if (typeof supabase !== 'undefined') {
+                const SUPABASE_URL = "https://axfcmtrhsvmtzqqhxwul.supabase.co";
+                const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ";
+                
+                const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                  email: email,
+                  password: password
+                });
+                
+                if (error) throw error;
+                
+                if (data && data.session) {
+                  localStorage.setItem('genia_auth_token', data.session.access_token);
+                  localStorage.setItem('genia_user', JSON.stringify(data.user));
+                  
+                  // Mostrar mensaje de éxito
+                  successMessage.style.display = 'block';
+                  
+                  // Redirigir al dashboard
+                  setTimeout(() => {
+                    window.location.href = '/dashboard';
+                  }, 1000);
+                } else {
+                  throw new Error('No se recibió sesión válida');
+                }
+              } else {
+                // Si ni siquiera tenemos Supabase, intentar directamente con la API backend
+                const response = await fetch('https://genia-backend.onrender.com/auth/login', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ email, password })
+                });
+                
+                if (!response.ok) {
+                  throw new Error('Error en la autenticación');
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.token) {
+                  localStorage.setItem('genia_auth_token', data.token);
+                  localStorage.setItem('genia_user', JSON.stringify(data.user || {}));
+                  
+                  // Mostrar mensaje de éxito
+                  successMessage.style.display = 'block';
+                  
+                  // Redirigir al dashboard
+                  setTimeout(() => {
+                    window.location.href = '/dashboard';
+                  }, 1000);
+                } else {
+                  throw new Error('Respuesta de autenticación inválida');
+                }
+              }
+            } catch (emergencyError) {
+              console.error('Error en autenticación de emergencia:', emergencyError);
+              throw emergencyError;
+            }
+          } else {
+            // Usar el apiClient si está disponible
+            try {
+              await window.apiClient.login(email, password);
+              
+              // Mostrar mensaje de éxito
+              successMessage.style.display = 'block';
+              
+              // La redirección ya está manejada en apiClient.login
+            } catch (apiError) {
+              console.error('Error de autenticación:', apiError);
+              throw apiError;
+            }
+          }
         } catch (error) {
           console.error('Error de login:', error);
           
           // Mostrar mensaje de error
           errorMessage.textContent = error.message || 'Error al iniciar sesión. Por favor, verifica tus credenciales.';
           errorMessage.style.display = 'block';
+        } finally {
+          // Restaurar botón y ocultar indicador de carga
+          loginButton.disabled = false;
+          loginButton.textContent = 'Iniciar Sesión';
+          loadingIndicator.style.display = 'none';
         }
       });
     });

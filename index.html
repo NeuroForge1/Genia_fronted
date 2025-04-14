@@ -55,6 +55,11 @@
       display: none;
     }
   </style>
+  <!-- Cargar Supabase desde CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <!-- Cargar nuestro cliente API -->
+  <script src="api-client.js"></script>
 </head>
 <body>
   <div class="container">
@@ -74,10 +79,6 @@
     </p>
   </div>
   
-  <!-- Scripts para la autenticación con Supabase -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="services/supabaseService.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('registroForm');
@@ -101,35 +102,32 @@
         errorMessage.style.display = 'none';
         
         try {
-          console.log('Iniciando registro con Supabase...');
+          console.log('Iniciando registro con apiClient...');
           
-          // Registrar usuario en Supabase
-          const { user, error } = await supabaseService.signUp(email, 'Genia2024!', {
-            nombre: nombre,
-            negocio: negocio
-          });
-          
-          if (error) {
-            console.error('Error de registro:', error);
-            errorMessage.textContent = error.message || 'Error al registrar. Por favor, intenta nuevamente.';
-            errorMessage.style.display = 'block';
-            return;
+          // Verificar que apiClient esté definido
+          if (typeof window.apiClient === 'undefined') {
+            throw new Error('apiClient no está definido. Verifica que api-client.js se haya cargado correctamente.');
           }
           
-          console.log('Registro exitoso:', user);
+          // Registrar usuario usando apiClient
+          const result = await window.apiClient.register({
+            nombre: nombre,
+            email: email,
+            negocio: negocio,
+            password: 'Genia2024!', // Contraseña predeterminada para registro rápido
+            telefono: '' // Campo opcional
+          });
+          
+          console.log('Registro exitoso:', result);
           
           // Mostrar mensaje de éxito
           successMessage.style.display = 'block';
           
-          // Redirigir al dashboard después de 2 segundos
-          setTimeout(() => {
-            console.log('Redirigiendo al dashboard...');
-            window.location.href = '/dashboard';
-          }, 2000);
+          // La redirección ya está manejada en apiClient.register
           
         } catch (error) {
           console.error('Error inesperado:', error);
-          errorMessage.textContent = 'Ha ocurrido un error inesperado. Por favor, intenta nuevamente.';
+          errorMessage.textContent = error.message || 'Ha ocurrido un error inesperado. Por favor, intenta nuevamente.';
           errorMessage.style.display = 'block';
         }
       });

@@ -8,8 +8,7 @@
   <meta name="theme-color" content="#67f8c0">
   <script src="config.js"></script>
   <script src="env.js"></script>
-  <script src="script.js"></script>
-  <script src="pwa-register.js"></script>
+  <script src="geniaApi.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // Inicializar el cliente de Supabase
@@ -354,222 +353,6 @@
     </p>
   </div>
 
-  <!-- Definición inline del objeto geniaApi -->
-  <script>
-    // API Integration para GENIA
-    // Este archivo conecta el frontend con el backend utilizando las rutas API correctas
-
-    // URL base del backend
-    const API_BASE_URL = 'https://genia-backend.onrender.com';
-
-    // Cliente API para realizar llamadas al backend
-    const geniaApi = {
-      // Función para realizar solicitudes GET
-      async get(endpoint) {
-        try {
-          // Asegurarse de que el endpoint comience con /api/ si es necesario
-          const url = endpoint.startsWith('/api/') 
-            ? `${API_BASE_URL}${endpoint}` 
-            : `${API_BASE_URL}/api${endpoint}`;
-          
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Error en la solicitud: ${response.status}`);
-          }
-          
-          return await response.json();
-        } catch (error) {
-          console.error('Error en la solicitud GET:', error);
-          throw error;
-        }
-      },
-      
-      // Función para realizar solicitudes POST
-      async post(endpoint, data) {
-        try {
-          // Asegurarse de que el endpoint comience con /api/ si es necesario
-          const url = endpoint.startsWith('/api/') 
-            ? `${API_BASE_URL}${endpoint}` 
-            : `${API_BASE_URL}/api${endpoint}`;
-          
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-            },
-            body: JSON.stringify(data)
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Error en la solicitud: ${response.status}`);
-          }
-          
-          return await response.json();
-        } catch (error) {
-          console.error('Error en la solicitud POST:', error);
-          throw error;
-        }
-      },
-      
-      // Servicios de autenticación
-      auth: {
-        // Iniciar sesión
-        async login(email, password) {
-          try {
-            const data = await geniaApi.post('/api/auth/login', { email, password });
-            if (data.token) {
-              localStorage.setItem('token', data.token);
-              localStorage.setItem('user', JSON.stringify(data.user));
-            }
-            return data;
-          } catch (error) {
-            console.error('Error en login:', error);
-            throw error;
-          }
-        },
-        
-        // Cerrar sesión
-        logout() {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/';
-        },
-        
-        // Registrar nuevo usuario
-        async register(email, password, userData) {
-          try {
-            const data = await geniaApi.post('/api/auth/register', { email, password, ...userData });
-            return { success: true, data };
-          } catch (error) {
-            console.error('Error en registro:', error);
-            return { success: false, message: error.message };
-          }
-        },
-        
-        // Iniciar sesión con Google
-        async signInWithGoogle() {
-          try {
-            // Redireccionar a la página de autenticación de Google
-            window.location.href = `${API_BASE_URL}/api/auth/google`;
-            return { success: true };
-          } catch (error) {
-            console.error('Error en inicio de sesión con Google:', error);
-            return { success: false, message: error.message };
-          }
-        },
-        
-        // Obtener usuario actual
-        getCurrentUser() {
-          const userStr = localStorage.getItem('user');
-          return userStr ? JSON.parse(userStr) : null;
-        },
-        
-        // Verificar si el usuario está autenticado
-        isAuthenticated() {
-          return !!localStorage.getItem('token');
-        }
-      }
-    };
-
-    // Exportar el cliente API
-    window.geniaApi = geniaApi;
-  </script>
-  
-  <script>
-    // Integración con Supabase para autenticación
-    document.addEventListener('DOMContentLoaded', function() {
-      // Asegurarse de que geniaApi esté definido
-      window.geniaApi = window.geniaApi || {};
-
-      // Implementar funciones de autenticación con Supabase
-      geniaApi.supabaseAuth = {
-        // Iniciar sesión con Google
-        async signInWithGoogle() {
-          try {
-            const { data, error } = await supabaseClient.auth.signInWithOAuth({
-              provider: 'google',
-              options: {
-                redirectTo: window.location.origin + '/dashboard.html'
-              }
-            });
-            
-            if (error) {
-              throw new Error(error.message);
-            }
-            
-            return {
-              success: true
-            };
-          } catch (error) {
-            console.error('Error en inicio de sesión con Google:', error);
-            return {
-              success: false,
-              message: error.message
-            };
-          }
-        },
-        
-        // Registrar un nuevo usuario
-        async register(email, password, userData) {
-          try {
-            // Registrar usuario en Supabase
-            const { data, error } = await supabaseClient.auth.signUp({
-              email,
-              password,
-              options: {
-                data: {
-                  full_name: userData.fullName,
-                  business_type: userData.businessType || '',
-                  plan: 'free_trial',
-                  credits: 100 // Créditos iniciales para el periodo de prueba
-                }
-              }
-            });
-            
-            if (error) {
-              throw new Error(error.message);
-            }
-            
-            // Guardar información del usuario en localStorage
-            if (data.user) {
-              localStorage.setItem('genia_user', JSON.stringify(data.user));
-              localStorage.setItem('genia_session', JSON.stringify(data.session));
-            }
-            
-            return {
-              success: true,
-              user: data.user,
-              session: data.session
-            };
-          } catch (error) {
-            console.error('Error en registro con Supabase:', error);
-            return {
-              success: false,
-              message: error.message
-            };
-          }
-        }
-      };
-
-      // Agregar las funciones de autenticación de Supabase al objeto geniaApi
-      if (typeof geniaApi !== 'undefined') {
-        // Reemplazar las funciones de autenticación existentes con las de Supabase
-        geniaApi.auth = geniaApi.supabaseAuth;
-        console.log('Autenticación con Supabase inicializada correctamente');
-      } else {
-        console.error('Error: geniaApi no está definido. No se puede agregar la autenticación con Supabase.');
-      }
-    });
-  </script>
-  
   <script>
     // Funciones auxiliares para mostrar mensajes
     function showError(message) {
@@ -590,14 +373,37 @@
       }, 5000);
     }
 
-    // Asegurarse de que el formulario use la autenticación de Supabase
-    document.addEventListener('DOMContentLoaded', function() {
+    // Verificar que geniaApi esté definido
+    function checkGeniaApi() {
+      if (typeof window.geniaApi === 'undefined') {
+        console.error('geniaApi no está definido. Intentando cargar de nuevo...');
+        // Intentar cargar el script de nuevo
+        const script = document.createElement('script');
+        script.src = 'geniaApi.js';
+        script.onload = initializeForm;
+        script.onerror = function() {
+          console.error('Error al cargar geniaApi.js');
+          showError('Error al cargar recursos necesarios. Por favor, recarga la página.');
+        };
+        document.head.appendChild(script);
+        return false;
+      }
+      return true;
+    }
+
+    // Inicializar el formulario
+    function initializeForm() {
+      if (!checkGeniaApi()) return;
+      
       const registerForm = document.getElementById('register-form');
       const googleLoginBtn = document.getElementById('google-login-btn');
       
       // Manejar el registro tradicional con email y contraseña
       registerForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        
+        // Verificar que geniaApi esté definido
+        if (!checkGeniaApi()) return;
         
         const nombre = registerForm.querySelector('input[name="nombre"]').value;
         const email = registerForm.querySelector('input[name="email"]').value;
@@ -614,8 +420,7 @@
           const password = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
           
           // Registrar al usuario usando la autenticación de Supabase
-          // Adaptamos los parámetros al formato esperado por supabase_auth.js
-          const result = await geniaApi.auth.register(email, password, {
+          const result = await window.geniaApi.supabaseAuth.register(email, password, {
             fullName: nombre,
             businessType: negocio
           });
@@ -623,8 +428,8 @@
           if (result.success) {
             // Enviar correo de bienvenida
             try {
-              if (geniaApi.email) {
-                await geniaApi.email.sendWelcomeEmail({
+              if (window.geniaApi.email) {
+                await window.geniaApi.email.sendWelcomeEmail({
                   email: email,
                   name: nombre,
                   business_type: negocio
@@ -656,13 +461,16 @@
       
       // Manejar el inicio de sesión con Google
       googleLoginBtn.addEventListener('click', async function() {
+        // Verificar que geniaApi esté definido
+        if (!checkGeniaApi()) return;
+        
         try {
           // Mostrar mensaje de carga
           googleLoginBtn.textContent = 'Conectando...';
           googleLoginBtn.disabled = true;
           
           // Iniciar sesión con Google usando Supabase
-          const result = await geniaApi.auth.signInWithGoogle();
+          const result = await window.geniaApi.supabaseAuth.signInWithGoogle();
           
           if (!result.success) {
             showError('Error al conectar con Google: ' + (result.message || 'Intente nuevamente'));
@@ -677,6 +485,12 @@
           googleLoginBtn.disabled = false;
         }
       });
+    }
+
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      // Esperar un momento para asegurarse de que geniaApi.js se haya cargado
+      setTimeout(initializeForm, 500);
     });
   </script>
 </body>

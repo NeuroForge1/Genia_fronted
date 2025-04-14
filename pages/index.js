@@ -1,12 +1,33 @@
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import supabaseService from '../services/supabaseService';
 
 export default function Home() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
     negocio: ''
   });
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const user = await supabaseService.getCurrentUser();
+        if (user) {
+          setIsAuthenticated(true);
+          // Si el usuario ya está autenticado, redirigir al dashboard
+          router.push('/dashboard');
+        }
+      } catch (error) {
+        console.error('Error al verificar autenticación:', error);
+      }
+    }
+    
+    checkAuth();
+  }, [router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,9 +40,15 @@ export default function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Implementar envío a API cuando esté disponible
-      console.log('Datos enviados:', formData);
-      alert('Gracias por registrarte. Te contactaremos pronto.');
+      // Redirigir al registro con los datos pre-llenados
+      router.push({
+        pathname: '/register',
+        query: { 
+          nombre: formData.nombre,
+          email: formData.email,
+          negocio: formData.negocio
+        }
+      });
     } catch (error) {
       console.error('Error al enviar formulario:', error);
       alert('Hubo un error al procesar tu solicitud. Por favor, intenta nuevamente.');

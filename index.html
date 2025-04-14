@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -50,6 +49,16 @@
       color: #000;
       cursor: pointer;
     }
+    .error-message {
+      color: #ff6b6b;
+      margin-top: 10px;
+      display: none;
+    }
+    .success-message {
+      color: #67f8c0;
+      margin-top: 10px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -57,11 +66,13 @@
     <h1>Activa tu GENIA gratis por 7 días</h1>
     <p>Tu sistema de crecimiento automatizado con IA. Sin riesgo. Sin esfuerzo.</p>
 
-    <form action="https://hook.eu2.make.com/mgmz3k8mvpw9jts58koqwjbyvxpv2whq" method="POST">
+    <form id="register-form" class="register-form">
       <input type="text" name="nombre" placeholder="Tu nombre completo" required><br>
       <input type="email" name="email" placeholder="Tu correo electrónico" required><br>
       <input type="text" name="negocio" placeholder="¿Qué vendes? (opcional)"><br>
       <button type="submit">Probar ahora gratis</button>
+      <div class="error-message" id="error-message"></div>
+      <div class="success-message" id="success-message"></div>
     </form>
 
     <p style="margin-top: 20px; font-size: 0.9rem; color: #999;">
@@ -69,8 +80,68 @@
     </p>
   </div>
 
-    <!-- Scripts GENIA API Integration -->
-    <script src="services/api_integration.js"></script>
-    <script src="enhanced_script.js"></script>
+  <!-- Scripts GENIA API Integration -->
+  <script src="services/api_integration.js"></script>
+  <script src="enhanced_script.js"></script>
+  <script>
+    // Funciones auxiliares para mostrar mensajes
+    function showError(message) {
+      const errorElement = document.getElementById('error-message');
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+      setTimeout(() => {
+        errorElement.style.display = 'none';
+      }, 5000);
+    }
+
+    function showSuccess(message) {
+      const successElement = document.getElementById('success-message');
+      successElement.textContent = message;
+      successElement.style.display = 'block';
+      setTimeout(() => {
+        successElement.style.display = 'none';
+      }, 5000);
+    }
+
+    // Asegurarse de que el formulario use la autenticación de Supabase
+    document.addEventListener('DOMContentLoaded', function() {
+      const registerForm = document.getElementById('register-form');
+      
+      registerForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const nombre = registerForm.querySelector('input[name="nombre"]').value;
+        const email = registerForm.querySelector('input[name="email"]').value;
+        const negocio = registerForm.querySelector('input[name="negocio"]').value;
+        
+        try {
+          // Generar una contraseña aleatoria para el usuario
+          const password = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+          
+          // Registrar al usuario usando la API de autenticación
+          const userData = {
+            email: email,
+            password: password,
+            name: nombre,
+            business_type: negocio
+          };
+          
+          const result = await geniaApi.auth.register(userData);
+          
+          if (result.success) {
+            showSuccess('Registro exitoso. Redirigiendo al dashboard...');
+            setTimeout(() => {
+              window.location.href = '/dashboard.html';
+            }, 2000);
+          } else {
+            showError('Error de registro: ' + (result.message || 'Intente nuevamente'));
+          }
+        } catch (error) {
+          console.error('Error al registrar:', error);
+          showError('Error al registrar: ' + (error.message || 'Intente nuevamente'));
+        }
+      });
+    });
+  </script>
 </body>
 </html>

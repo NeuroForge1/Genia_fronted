@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <defs>
+    <linearGradient id="whatsapp-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#67f8c0" />
+      <stop offset="100%" stop-color="#4361ee" />
+    </linearGradient>
+  </defs>
+  <circle cx="25" cy="25" r="23" fill="#1c1c1c" stroke="url(#whatsapp-gradient)" stroke-width="2" />
+  <path d="M35,25 C35,30.5 30.5,35 25,35 C22.5,35 20.2,34.1 18.4,32.6 L15,34 L16.4,30.6 C14.9,28.8 14,26.5 14,24 C14,18.5 18.5,14 24,14 C29.5,14 35,18.5 35,25 Z" stroke="url(#whatsapp-gradient)" stroke-width="2" fill="none" />
+  <path d="M28,27 C27,28 25,29 24,29 C21,29 19,27 19,24 C19,23 20,21 21,20 C21.5,19.5 22.5,19.5 23,20 L24,21 C24.5,21.5 24.5,22.5 24,23 C23.5,23.5 23.5,24.5 24,25 C24.5,25.5 25.5,25.5 26,25 L28,23 C28.5,22.5 29.5,22.5 30,23 C30.5,23.5 30.5,24.5 30,25 L28,27 Z" fill="url(#whatsapp-gradient)" />
+</svg>

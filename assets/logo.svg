@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#67f8c0" />
+      <stop offset="100%" stop-color="#4361ee" />
+    </linearGradient>
+  </defs>
+  <text x="10" y="30" font-family="Poppins, sans-serif" font-size="28" font-weight="700" fill="url(#gradient)">GENIA</text>
+</svg>

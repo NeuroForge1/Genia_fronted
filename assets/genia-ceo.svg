@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
+  <defs>
+    <linearGradient id="ceo-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#67f8c0" />
+      <stop offset="100%" stop-color="#4361ee" />
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="180" height="130" rx="10" fill="#1c1c1c" />
+  <text x="100" y="60" font-family="Poppins, sans-serif" font-size="24" font-weight="700" fill="url(#ceo-gradient)" text-anchor="middle">GENIA</text>
+  <text x="100" y="90" font-family="Poppins, sans-serif" font-size="18" font-weight="500" fill="#ffffff" text-anchor="middle">CEO</text>
+  <path d="M70,110 L130,110" stroke="url(#ceo-gradient)" stroke-width="3" />
+</svg>

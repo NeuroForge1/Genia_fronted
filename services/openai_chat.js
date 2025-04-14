@@ -9,6 +9,11 @@ const openaiChatService = {
   // Enviar mensaje al chat de OpenAI
   async sendMessage(message, cloneType = 'general', conversationHistory = []) {
     try {
+      // Verificar si la clave API está disponible
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'sk-demo-openai-key-for-development-purposes-only') {
+        console.warn('Usando clave API de OpenAI de prueba. Esto puede afectar la funcionalidad.');
+      }
+      
       // Definir el sistema según el tipo de clon
       let systemMessage = '';
       
@@ -36,40 +41,66 @@ const openaiChatService = {
       
       // Añadir el historial de conversación si existe
       if (conversationHistory && conversationHistory.length > 0) {
-        conversationHistory.forEach(item => {
+        // Limitar el historial a las últimas 10 interacciones para evitar tokens excesivos
+        const limitedHistory = conversationHistory.slice(-20);
+        limitedHistory.forEach(item => {
           messages.push(item);
         });
       }
       
-      // Añadir el mensaje actual del usuario
-      messages.push({ role: 'user', content: message });
-      
-      // Realizar la solicitud a la API de OpenAI
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4-turbo',
-          messages: messages,
-          max_tokens: 1000,
-          temperature: 0.7
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error en la API de OpenAI: ${errorData.error?.message || response.statusText}`);
+      // Añadir el mensaje actual del usuario si no está en el historial
+      const lastMessage = conversationHistory.length > 0 ? conversationHistory[conversationHistory.length - 1] : null;
+      if (!lastMessage || lastMessage.role !== 'user' || lastMessage.content !== message) {
+        messages.push({ role: 'user', content: message });
       }
       
-      const data = await response.json();
-      return {
-        success: true,
-        message: data.choices[0].message.content,
-        usage: data.usage
-      };
+      // Implementar mecanismo de reintentos
+      let attempts = 0;
+      const maxAttempts = 3;
+      let lastError = null;
+      
+      while (attempts < maxAttempts) {
+        try {
+          // Realizar la solicitud a la API de OpenAI
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-4-turbo',
+              messages: messages,
+              max_tokens: 1000,
+              temperature: 0.7
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error en la API de OpenAI: ${errorData.error?.message || response.statusText}`);
+          }
+          
+          const data = await response.json();
+          return {
+            success: true,
+            message: data.choices[0].message.content,
+            usage: data.usage
+          };
+        } catch (error) {
+          lastError = error;
+          console.warn(`Intento ${attempts + 1} fallido: ${error.message}`);
+          attempts++;
+          
+          // Esperar antes de reintentar (backoff exponencial)
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempts)));
+          }
+        }
+      }
+      
+      // Si llegamos aquí, todos los intentos fallaron
+      throw lastError || new Error('Error desconocido al comunicarse con OpenAI');
     } catch (error) {
       console.error('Error al enviar mensaje a OpenAI:', error);
       return {
@@ -82,6 +113,11 @@ const openaiChatService = {
   // Generar contenido específico con OpenAI
   async generateContent(prompt, contentType, parameters = {}) {
     try {
+      // Verificar si la clave API está disponible
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'sk-demo-openai-key-for-development-purposes-only') {
+        console.warn('Usando clave API de OpenAI de prueba. Esto puede afectar la funcionalidad.');
+      }
+      
       let systemMessage = '';
       
       switch(contentType) {
@@ -113,35 +149,56 @@ const openaiChatService = {
         enhancedPrompt += `\nAudiencia objetivo: ${parameters.target_audience}`;
       }
       
-      // Realizar la solicitud a la API de OpenAI
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4-turbo',
-          messages: [
-            { role: 'system', content: systemMessage },
-            { role: 'user', content: enhancedPrompt }
-          ],
-          max_tokens: 1500,
-          temperature: 0.8
-        })
-      });
+      // Implementar mecanismo de reintentos
+      let attempts = 0;
+      const maxAttempts = 3;
+      let lastError = null;
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error en la API de OpenAI: ${errorData.error?.message || response.statusText}`);
+      while (attempts < maxAttempts) {
+        try {
+          // Realizar la solicitud a la API de OpenAI
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-4-turbo',
+              messages: [
+                { role: 'system', content: systemMessage },
+                { role: 'user', content: enhancedPrompt }
+              ],
+              max_tokens: 1500,
+              temperature: 0.8
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error en la API de OpenAI: ${errorData.error?.message || response.statusText}`);
+          }
+          
+          const data = await response.json();
+          return {
+            success: true,
+            content: data.choices[0].message.content,
+            usage: data.usage
+          };
+        } catch (error) {
+          lastError = error;
+          console.warn(`Intento ${attempts + 1} fallido: ${error.message}`);
+          attempts++;
+          
+          // Esperar antes de reintentar (backoff exponencial)
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempts)));
+          }
+        }
       }
       
-      const data = await response.json();
-      return {
-        success: true,
-        content: data.choices[0].message.content,
-        usage: data.usage
-      };
+      // Si llegamos aquí, todos los intentos fallaron
+      throw lastError || new Error('Error desconocido al comunicarse con OpenAI');
     } catch (error) {
       console.error('Error al generar contenido con OpenAI:', error);
       return {
@@ -155,6 +212,11 @@ const openaiChatService = {
   // Analizar texto con OpenAI
   async analyzeText(text, analysisType) {
     try {
+      // Verificar si la clave API está disponible
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'sk-demo-openai-key-for-development-purposes-only') {
+        console.warn('Usando clave API de OpenAI de prueba. Esto puede afectar la funcionalidad.');
+      }
+      
       let systemMessage = '';
       let userPrompt = '';
       
@@ -176,35 +238,56 @@ const openaiChatService = {
           userPrompt = `Analiza el siguiente texto:\n\n${text}`;
       }
       
-      // Realizar la solicitud a la API de OpenAI
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4-turbo',
-          messages: [
-            { role: 'system', content: systemMessage },
-            { role: 'user', content: userPrompt }
-          ],
-          max_tokens: 1000,
-          temperature: 0.3
-        })
-      });
+      // Implementar mecanismo de reintentos
+      let attempts = 0;
+      const maxAttempts = 3;
+      let lastError = null;
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error en la API de OpenAI: ${errorData.error?.message || response.statusText}`);
+      while (attempts < maxAttempts) {
+        try {
+          // Realizar la solicitud a la API de OpenAI
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-4-turbo',
+              messages: [
+                { role: 'system', content: systemMessage },
+                { role: 'user', content: userPrompt }
+              ],
+              max_tokens: 1000,
+              temperature: 0.3
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error en la API de OpenAI: ${errorData.error?.message || response.statusText}`);
+          }
+          
+          const data = await response.json();
+          return {
+            success: true,
+            analysis: data.choices[0].message.content,
+            usage: data.usage
+          };
+        } catch (error) {
+          lastError = error;
+          console.warn(`Intento ${attempts + 1} fallido: ${error.message}`);
+          attempts++;
+          
+          // Esperar antes de reintentar (backoff exponencial)
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempts)));
+          }
+        }
       }
       
-      const data = await response.json();
-      return {
-        success: true,
-        analysis: data.choices[0].message.content,
-        usage: data.usage
-      };
+      // Si llegamos aquí, todos los intentos fallaron
+      throw lastError || new Error('Error desconocido al comunicarse con OpenAI');
     } catch (error) {
       console.error('Error al analizar texto con OpenAI:', error);
       return {

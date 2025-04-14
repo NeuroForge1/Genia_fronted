@@ -1,0 +1,114 @@
+/* Estilos adicionales para mejorar la responsividad en dispositivos móviles */
+
+/* Ajustes generales para dispositivos pequeños */
+@media (max-width: 480px) {
+  /* Reducir padding y márgenes */
+  .container, .card, .dashboard-container {
+    padding: 12px !important;
+    margin: 10px !important;
+  }
+  
+  /* Ajustar tamaños de fuente */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.3rem !important;
+  }
+  
+  h3 {
+    font-size: 1.1rem !important;
+  }
+  
+  p, div, span, button, input, textarea {
+    font-size: 0.9rem !important;
+  }
+  
+  /* Mejorar interactividad en pantallas táctiles */
+  button, .btn, .action-card, .clone-option, .nav-links a {
+    padding: 10px !important;
+    min-height: 44px !important; /* Tamaño mínimo para elementos táctiles */
+  }
+  
+  /* Ajustar grids para una sola columna */
+  .dashboard-stats, .clones-grid, .quick-actions {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Mejorar la navegación en móviles */
+  .nav-links {
+    gap: 5px !important;
+  }
+  
+  .nav-links a {
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* Ajustes para el chat en móviles */
+  .message {
+    padding: 10px 12px !important;
+  }
+  
+  .message-input {
+    flex-direction: column !important;
+  }
+  
+  .message-input button {
+    margin-left: 0 !important;
+    margin-top: 10px !important;
+    width: 100% !important;
+  }
+  
+  /* Ajustes para la verificación de WhatsApp */
+  .verification-code {
+    gap: 5px !important;
+  }
+  
+  .verification-code input {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* Ajustes para tablets */
+@media (min-width: 481px) and (max-width: 768px) {
+  /* Ajustar grids para dos columnas */
+  .dashboard-stats, .clones-grid, .quick-actions {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Mejorar espaciado */
+  .container, .card, .dashboard-container {
+    padding: 15px !important;
+  }
+}
+
+/* Ajustes para orientación landscape en móviles */
+@media (max-height: 500px) and (orientation: landscape) {
+  .sidebar {
+    max-height: 150px !important;
+  }
+  
+  .chat-main {
+    max-height: calc(100vh - 200px) !important;
+  }
+  
+  .header {
+    padding: 8px 15px !important;
+  }
+  
+  .header h1 {
+    font-size: 1.2rem !important;
+  }
+}
+
+/* Mejoras de accesibilidad */
+@media (any-pointer: coarse) {
+  /* Aumentar áreas táctiles */
+  button, .btn, .action-card, .clone-option, .nav-links a {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+}

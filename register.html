@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <!-- Importar Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Cargar el script de compatibilidad antes que cualquier otro script -->
+    <script src="auth-compatibility.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -98,114 +98,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="config.js"></script>
-    
-    <!-- Implementación directa del cliente API para compatibilidad -->
-    <script>
-        // Configuración de Supabase
-        const SUPABASE_URL = "https://axfcmtrhsvmtzqqhxwul.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ";
-        
-        // Crear cliente de Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // Implementación del cliente API para compatibilidad con páginas HTML tradicionales
-        const apiClient = {
-            /**
-             * Realiza una solicitud POST
-             * @param {string} endpoint - Ruta del endpoint
-             * @param {Object} data - Datos a enviar en el cuerpo de la solicitud
-             * @returns {Promise} - Promesa con la respuesta
-             */
-            post: async (endpoint, data) => {
-                console.log('apiClient.post llamado con endpoint:', endpoint);
-                
-                // Manejar autenticación
-                if (endpoint === '/auth/login') {
-                    try {
-                        const { data: authData, error } = await supabase.auth.signInWithPassword({
-                            email: data.email,
-                            password: data.password
-                        });
-                        
-                        console.log('Resultado de login con Supabase:', authData);
-                        
-                        if (error) throw error;
-                        
-                        if (authData.session) {
-                            // Guardar token en localStorage
-                            localStorage.setItem('genia_token', authData.session.access_token);
-                            localStorage.setItem('genia_user', JSON.stringify(authData.user));
-                            
-                            // Redirigir al dashboard después de login exitoso
-                            window.location.href = '/dashboard';
-                            return {
-                                token: authData.session.access_token,
-                                user: authData.user
-                            };
-                        } else {
-                            throw new Error('Error de autenticación');
-                        }
-                    } catch (error) {
-                        console.error('Error en login con Supabase:', error);
-                        throw error;
-                    }
-                } 
-                // Manejar registro
-                else if (endpoint === '/api/users/register') {
-                    try {
-                        const { data: authData, error } = await supabase.auth.signUp({
-                            email: data.email,
-                            password: data.password,
-                            options: {
-                                data: {
-                                    nombre: data.nombre,
-                                    negocio: data.negocio,
-                                    telefono: data.telefono
-                                }
-                            }
-                        });
-                        
-                        console.log('Resultado de registro con Supabase:', authData);
-                        
-                        if (error) {
-                            if (error.message.includes('already registered')) {
-                                throw {
-                                    status: 400,
-                                    data: { detail: 'El email ya está registrado' }
-                                };
-                            }
-                            throw error;
-                        }
-                        
-                        // Redirigir al dashboard o página de confirmación después de registro exitoso
-                        window.location.href = '/dashboard';
-                        return { status: 'success' };
-                    } catch (error) {
-                        console.error('Error en registro con Supabase:', error);
-                        throw error;
-                    }
-                }
-                
-                // Para otros endpoints, implementar según sea necesario
-                console.error('Endpoint no implementado:', endpoint);
-                return Promise.reject(new Error('Endpoint no implementado'));
-            },
-            
-            /**
-             * Realiza una solicitud GET
-             * @param {string} endpoint - Ruta del endpoint
-             * @returns {Promise} - Promesa con la respuesta
-             */
-            get: async (endpoint) => {
-                console.log('apiClient.get llamado con endpoint:', endpoint);
-                
-                // Implementar según sea necesario
-                console.error('Endpoint GET no implementado:', endpoint);
-                return Promise.reject(new Error('Endpoint GET no implementado'));
-            }
-        };
-    </script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -232,8 +124,13 @@
                     document.querySelector('button[type="submit"]').innerHTML = 'Creando cuenta...';
                     document.querySelector('button[type="submit"]').disabled = true;
                     
+                    // Verificar que apiClient esté disponible
+                    if (!window.apiClient) {
+                        throw new Error('El cliente API no está disponible. Por favor, recarga la página.');
+                    }
+                    
                     // Llamar a la API de registro
-                    const response = await apiClient.post('/api/users/register', {
+                    const response = await window.apiClient.post('/api/users/register', {
                         nombre: nombre,
                         email: email,
                         negocio: negocio,
@@ -241,7 +138,7 @@
                         password: password
                     });
                     
-                    if (response.status === 'success') {
+                    if (response && response.status === 'success') {
                         alert('Cuenta creada correctamente. Por favor, inicia sesión.');
                         window.location.href = '/login';
                     } else {

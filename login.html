@@ -187,28 +187,19 @@
                     
                     console.log('Intentando iniciar sesión con:', email);
                     
-                    // Llamar directamente a Supabase para autenticación
-                    const { data, error } = await supabase.auth.signInWithPassword({
-                        email: email,
-                        password: password
-                    });
-                    
-                    console.log('Resultado de autenticación:', data);
-                    
-                    if (error) {
-                        console.error('Error de autenticación:', error);
-                        loginError.textContent = 'Error al iniciar sesión: ' + error.message;
-                        loginError.classList.remove('d-none');
-                    } else if (data.session) {
-                        // Guardar token en localStorage
-                        localStorage.setItem('genia_token', data.session.access_token);
-                        localStorage.setItem('genia_user', JSON.stringify(data.user));
+                    // Usar el apiClient definido anteriormente
+                    try {
+                        const result = await apiClient.post('/auth/login', {
+                            email: email,
+                            password: password
+                        });
                         
-                        // Redirigir al dashboard
-                        alert('Inicio de sesión exitoso. Redirigiendo al dashboard...');
-                        window.location.href = '/dashboard';
-                    } else {
-                        loginError.textContent = 'Error de autenticación. Por favor, verifica tus credenciales.';
+                        console.log('Resultado de autenticación:', result);
+                        
+                        // La redirección ya está manejada en apiClient.post
+                    } catch (apiError) {
+                        console.error('Error de autenticación:', apiError);
+                        loginError.textContent = 'Error al iniciar sesión: ' + (apiError.message || 'Verifica tus credenciales');
                         loginError.classList.remove('d-none');
                     }
                 } catch (error) {

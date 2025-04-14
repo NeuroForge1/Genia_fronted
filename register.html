@@ -137,6 +137,58 @@
         // Crear cliente de Supabase
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        // Implementación del cliente API directamente en la página
+        const apiClient = {
+            post: async function(endpoint, data) {
+                console.log('apiClient.post llamado con endpoint:', endpoint);
+                
+                try {
+                    // Manejar registro
+                    if (endpoint === '/api/users/register') {
+                        try {
+                            const { data: authData, error } = await supabase.auth.signUp({
+                                email: data.email,
+                                password: data.password,
+                                options: {
+                                    data: {
+                                        nombre: data.nombre,
+                                        negocio: data.negocio,
+                                        telefono: data.telefono
+                                    }
+                                }
+                            });
+                            
+                            console.log('Resultado de registro con Supabase:', authData);
+                            
+                            if (error) {
+                                if (error.message.includes('already registered')) {
+                                    throw {
+                                        status: 400,
+                                        data: { detail: 'El email ya está registrado' }
+                                    };
+                                }
+                                throw error;
+                            }
+                            
+                            // Redirigir al dashboard o página de confirmación después de registro exitoso
+                            window.location.href = '/dashboard';
+                            return { status: 'success' };
+                        } catch (error) {
+                            console.error('Error en registro con Supabase:', error);
+                            throw error;
+                        }
+                    }
+                    
+                    // Para otros endpoints, implementar según sea necesario
+                    console.error('Endpoint no implementado:', endpoint);
+                    return Promise.reject(new Error('Endpoint no implementado'));
+                } catch (error) {
+                    console.error('Error en apiClient.post:', error);
+                    throw error;
+                }
+            }
+        };
+        
         document.addEventListener('DOMContentLoaded', function() {
             const registerForm = document.getElementById('registerForm');
             const registerButton = document.getElementById('registerButton');
@@ -169,52 +221,31 @@
                     
                     console.log('Intentando registrar usuario:', email);
                     
-                    // Llamar directamente a Supabase para registro
-                    const { data, error } = await supabase.auth.signUp({
-                        email: email,
-                        password: password,
-                        options: {
-                            data: {
-                                nombre: nombre,
-                                negocio: negocio,
-                                telefono: telefono
-                            }
-                        }
-                    });
+                    // Usar el apiClient definido anteriormente
+                    try {
+                        const result = await apiClient.post('/api/users/register', {
+                            nombre: nombre,
+                            email: email,
+                            negocio: negocio,
+                            telefono: telefono,
+                            password: password
+                        });
                     
-                    console.log('Resultado de registro:', data);
-                    
-                    if (error) {
-                        console.error('Error de registro:', error);
-                        if (error.message.includes('already registered')) {
+                        console.log('Resultado de registro:', result);
+                        
+                        // Mostrar mensaje de éxito
+                        registerSuccess.textContent = 'Cuenta creada exitosamente. Serás redirigido al dashboard...';
+                        registerSuccess.classList.remove('d-none');
+                        
+                        // La redirección ya está manejada en apiClient.post
+                    } catch (apiError) {
+                        console.error('Error de registro:', apiError);
+                        if (apiError.message && apiError.message.includes('already registered')) {
                             registerError.textContent = 'Este email ya está registrado. Por favor, utiliza otro o inicia sesión.';
                         } else {
-                            registerError.textContent = 'Error al crear la cuenta: ' + error.message;
+                            registerError.textContent = 'Error al crear la cuenta: ' + (apiError.message || 'Verifica tus datos');
                         }
                         registerError.classList.remove('d-none');
-                    } else {
-                        // Guardar token en localStorage si hay sesión
-                        if (data.session) {
-                            localStorage.setItem('genia_token', data.session.access_token);
-                            localStorage.setItem('genia_user', JSON.stringify(data.user));
-                            
-                            // Mostrar mensaje de éxito
-                            registerSuccess.classList.remove('d-none');
-                            
-                            // Redirigir al dashboard después de un breve retraso
-                            setTimeout(() => {
-                                window.location.href = '/dashboard';
-                            }, 2000);
-                        } else {
-                            // Si no hay sesión, probablemente se requiere confirmación por email
-                            registerSuccess.textContent = 'Cuenta creada. Por favor, verifica tu email para confirmar tu cuenta.';
-                            registerSuccess.classList.remove('d-none');
-                            
-                            // Redirigir a login después de un breve retraso
-                            setTimeout(() => {
-                                window.location.href = '/login';
-                            }, 3000);
-                        }
                     }
                 } catch (error) {
                     console.error('Error inesperado:', error);

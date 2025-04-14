@@ -7,8 +7,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <!-- Cargar el script de compatibilidad antes que cualquier otro script -->
-    <script src="auth-compatibility.js"></script>
+    
+    <!-- Cargar Supabase directamente -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -87,6 +88,60 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Configuración de Supabase directamente en la página
+        const SUPABASE_URL = "https://axfcmtrhsvmtzqqhxwul.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ";
+        
+        // Crear cliente de Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Implementación del cliente API directamente en la página
+        const apiClient = {
+            post: async function(endpoint, data) {
+                console.log('apiClient.post llamado con endpoint:', endpoint);
+                
+                try {
+                    // Manejar autenticación
+                    if (endpoint === '/auth/login') {
+                        try {
+                            const { data: authData, error } = await supabase.auth.signInWithPassword({
+                                email: data.email,
+                                password: data.password
+                            });
+                            
+                            console.log('Resultado de login con Supabase:', authData);
+                            
+                            if (error) throw error;
+                            
+                            if (authData.session) {
+                                // Guardar token en localStorage
+                                localStorage.setItem('genia_token', authData.session.access_token);
+                                localStorage.setItem('genia_user', JSON.stringify(authData.user));
+                                
+                                // Redirigir al dashboard después de login exitoso
+                                window.location.href = '/dashboard';
+                                return {
+                                    token: authData.session.access_token,
+                                    user: authData.user
+                                };
+                            } else {
+                                throw new Error('Error de autenticación');
+                            }
+                        } catch (error) {
+                            console.error('Error en login con Supabase:', error);
+                            throw error;
+                        }
+                    } 
+                    // Para otros endpoints, implementar según sea necesario
+                    console.error('Endpoint no implementado:', endpoint);
+                    return Promise.reject(new Error('Endpoint no implementado'));
+                } catch (error) {
+                    console.error('Error en apiClient.post:', error);
+                    throw error;
+                }
+            }
+        };
+        
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
             
@@ -101,23 +156,26 @@
                     document.querySelector('button[type="submit"]').innerHTML = 'Iniciando sesión...';
                     document.querySelector('button[type="submit"]').disabled = true;
                     
-                    // Verificar que apiClient esté disponible
-                    if (!window.apiClient) {
-                        throw new Error('El cliente API no está disponible. Por favor, recarga la página.');
-                    }
+                    console.log('Intentando iniciar sesión con:', email);
                     
-                    // Llamar a la API de autenticación
-                    const response = await window.apiClient.post('/auth/login', {
+                    // Llamar directamente a Supabase para autenticación
+                    const { data: authData, error } = await supabase.auth.signInWithPassword({
                         email: email,
                         password: password
                     });
                     
-                    if (response && response.token) {
+                    console.log('Resultado de autenticación:', authData);
+                    
+                    if (error) {
+                        console.error('Error de autenticación:', error);
+                        alert('Error al iniciar sesión: ' + error.message);
+                    } else if (authData.session) {
                         // Guardar token en localStorage
-                        localStorage.setItem('genia_token', response.token);
-                        localStorage.setItem('genia_user', JSON.stringify(response.user));
+                        localStorage.setItem('genia_token', authData.session.access_token);
+                        localStorage.setItem('genia_user', JSON.stringify(authData.user));
                         
                         // Redirigir al dashboard
+                        alert('Inicio de sesión exitoso. Redirigiendo al dashboard...');
                         window.location.href = '/dashboard';
                     } else {
                         alert('Error de autenticación. Por favor, verifica tus credenciales.');
@@ -133,6 +191,5 @@
             });
         });
     </script>
-    <script src="pwa-register.js"></script>
 </body>
 </html>

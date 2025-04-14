@@ -7,8 +7,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <!-- Cargar el script de compatibilidad antes que cualquier otro script -->
-    <script src="auth-compatibility.js"></script>
+    
+    <!-- Cargar Supabase directamente -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -100,6 +101,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Configuración de Supabase directamente en la página
+        const SUPABASE_URL = "https://axfcmtrhsvmtzqqhxwul.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ";
+        
+        // Crear cliente de Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         document.addEventListener('DOMContentLoaded', function() {
             const registerForm = document.getElementById('registerForm');
             
@@ -124,33 +132,47 @@
                     document.querySelector('button[type="submit"]').innerHTML = 'Creando cuenta...';
                     document.querySelector('button[type="submit"]').disabled = true;
                     
-                    // Verificar que apiClient esté disponible
-                    if (!window.apiClient) {
-                        throw new Error('El cliente API no está disponible. Por favor, recarga la página.');
-                    }
+                    console.log('Intentando registrar usuario:', email);
                     
-                    // Llamar a la API de registro
-                    const response = await window.apiClient.post('/api/users/register', {
-                        nombre: nombre,
+                    // Llamar directamente a Supabase para registro
+                    const { data: authData, error } = await supabase.auth.signUp({
                         email: email,
-                        negocio: negocio,
-                        telefono: telefono,
-                        password: password
+                        password: password,
+                        options: {
+                            data: {
+                                nombre: nombre,
+                                negocio: negocio,
+                                telefono: telefono
+                            }
+                        }
                     });
                     
-                    if (response && response.status === 'success') {
-                        alert('Cuenta creada correctamente. Por favor, inicia sesión.');
-                        window.location.href = '/login';
+                    console.log('Resultado de registro:', authData);
+                    
+                    if (error) {
+                        console.error('Error de registro:', error);
+                        if (error.message.includes('already registered')) {
+                            alert('Este email ya está registrado. Por favor, utiliza otro o inicia sesión.');
+                        } else {
+                            alert('Error al crear la cuenta: ' + error.message);
+                        }
+                    } else if (authData) {
+                        // Guardar token en localStorage si hay sesión
+                        if (authData.session) {
+                            localStorage.setItem('genia_token', authData.session.access_token);
+                            localStorage.setItem('genia_user', JSON.stringify(authData.user));
+                        }
+                        
+                        // Mostrar mensaje de éxito y redirigir
+                        alert('Cuenta creada correctamente. Serás redirigido al dashboard.');
+                        window.location.href = '/dashboard';
                     } else {
-                        alert('Error al crear la cuenta. Por favor, intenta nuevamente.');
+                        alert('Cuenta creada. Por favor, verifica tu email para confirmar tu cuenta.');
+                        window.location.href = '/login';
                     }
                 } catch (error) {
-                    console.error('Error de registro:', error);
-                    if (error.status === 400 && error.data && error.data.detail === 'El email ya está registrado') {
-                        alert('Este email ya está registrado. Por favor, utiliza otro o inicia sesión.');
-                    } else {
-                        alert('Error al crear la cuenta. Por favor, intenta nuevamente.');
-                    }
+                    console.error('Error inesperado:', error);
+                    alert('Error al crear la cuenta. Por favor, intenta nuevamente.');
                 } finally {
                     // Restaurar botón
                     document.querySelector('button[type="submit"]').innerHTML = 'Crear cuenta';
@@ -159,6 +181,5 @@
             });
         });
     </script>
-    <script src="pwa-register.js"></script>
 </body>
 </html>

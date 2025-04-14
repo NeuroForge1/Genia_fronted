@@ -1,23 +1,45 @@
+// Configuración para despliegue en Vercel
 {
   "version": 2,
-  "name": "genia-platform",
   "builds": [
-    { "src": "*.html", "use": "@vercel/static" },
-    { "src": "*.js", "use": "@vercel/node" }
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "https://genia-backend.onrender.com/api/$1" },
-    { "src": "/auth/(.*)", "dest": "https://genia-backend.onrender.com/auth/$1" },
-    { "src": "/", "dest": "/index.html" },
-    { "src": "/login", "dest": "/login.html" },
-    { "src": "/register", "dest": "/register.html" },
-    { "src": "/admin", "dest": "/genia_admin_panel.html" },
-    { "src": "/ai-tracker", "dest": "/genia_ai_tracker.html" },
-    { "src": "/referidos", "dest": "/genia_referidos_panel.html" },
-    { "src": "/marketplace", "dest": "/genia_marketplace.html" },
-    { "src": "/(.*)", "dest": "/$1" }
+    {
+      "src": "/app",
+      "dest": "/dashboard"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin-panel"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://genia-backend.onrender.com"
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "API_BASE_URL": "@api_base_url",
+    "WHATSAPP_API_URL": "@whatsapp_api_url",
+    "STRIPE_PUBLIC_KEY": "@stripe_public_key",
+    "N8N_BASE_URL": "@n8n_base_url",
+    "DEBUG_MODE": "false",
+    "ANALYTICS_ID": "@analytics_id",
+    "ERROR_REPORTING_DSN": "@error_reporting_dsn"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key"
+    }
+  },
+  "github": {
+    "enabled": true,
+    "silent": true
   }
 }

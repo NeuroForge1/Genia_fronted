@@ -1,52 +1,95 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
+// Configuración de variables de entorno para Next.js
+module.exports = {
+  env: {
+    // Configuración de Supabase
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xyzcompany.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    
+    // Configuración de API
+    API_BASE_URL: process.env.API_BASE_URL || 'https://api.genia.app',
+    
+    // Configuración de integraciones
+    WHATSAPP_API_URL: process.env.WHATSAPP_API_URL || 'https://whatsapp.genia.app/api',
+    STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY || 'pk_test_...',
+    N8N_BASE_URL: process.env.N8N_BASE_URL || 'https://n8n.genia.app',
+    
+    // Configuración de la aplicación
+    APP_NAME: 'GENIA',
+    APP_VERSION: '1.0.0',
+    APP_ENVIRONMENT: process.env.NODE_ENV || 'development',
+    DEBUG_MODE: process.env.DEBUG_MODE === 'true' || false,
+    
+    // Configuración de análisis y monitoreo
+    ANALYTICS_ID: process.env.ANALYTICS_ID || '',
+    ERROR_REPORTING_DSN: process.env.ERROR_REPORTING_DSN || '',
+  },
+  
+  // Configuración de imágenes
+  images: {
+    domains: ['genia.app', 'assets.genia.app', 'supabase.co'],
+    formats: ['image/avif', 'image/webp'],
+  },
+  
+  // Configuración de redirecciones
   async redirects() {
     return [
-      // Redirecciones para mantener compatibilidad con URLs antiguas
       {
-        source: '/genia_admin_panel.html',
-        destination: '/admin',
+        source: '/app',
+        destination: '/dashboard',
         permanent: true,
       },
       {
-        source: '/genia_ai_tracker.html',
-        destination: '/ai-tracker',
-        permanent: true,
+        source: '/admin',
+        destination: '/admin-panel',
+        permanent: false,
       },
-      {
-        source: '/genia_marketplace.html',
-        destination: '/marketplace',
-        permanent: true,
-      },
-      {
-        source: '/genia_referidos_panel.html',
-        destination: '/referrals',
-        permanent: true,
-      },
-      // Redirecciones para rutas simplificadas
-      {
-        source: '/referidos',
-        destination: '/referrals',
-        permanent: true,
-      },
-      {
-        source: '/admin-panel',
-        destination: '/admin',
-        permanent: true,
-      }
-    ]
+    ];
   },
-  // Configuración para optimización de imágenes
-  images: {
-    domains: ['axfcmtrhsvmtzqqhxwul.supabase.co'],
+  
+  // Configuración de encabezados HTTP
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ];
   },
-  // Configuración para entorno de desarrollo
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: 'https://axfcmtrhsvmtzqqhxwul.supabase.co',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ',
-  }
-}
-
-module.exports = nextConfig
+  
+  // Configuración de webpack para optimización
+  webpack: (config, { dev, isServer }) => {
+    // Optimizaciones solo para producción
+    if (!dev) {
+      // Optimización de CSS
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            styles: {
+              name: 'styles',
+              test: /\.(css|scss)$/,
+              chunks: 'all',
+              enforce: true,
+            },
+          },
+        },
+      };
+    }
+    
+    return config;
+  },
+};

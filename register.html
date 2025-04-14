@@ -31,17 +31,11 @@
             margin-top: 100px;
         }
     </style>
-    <!-- Configuración global -->
-    <script>
-        // Configuración de GENIA
-        window.GENIA_CONFIG = {
-            // Credenciales de Supabase
-            supabase: {
-                url: "https://axfcmtrhsvmtzqqhxwul.supabase.co",
-                anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ"
-            }
-        };
-    </script>
+    <!-- Cargar Supabase desde CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Cargar nuestro cliente API -->
+    <script src="api-client.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -82,11 +76,12 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
-                        <h3 class="mb-0">Crear una cuenta</h3>
+                        <h3 class="mb-0">Registro</h3>
                     </div>
                     <div class="card-body">
                         <form id="registerForm">
                             <div class="alert alert-danger d-none" id="register-error"></div>
+                            <div class="alert alert-success d-none" id="register-success">Registro exitoso. Redirigiendo al dashboard...</div>
                             
                             <div class="mb-3">
                                 <label for="nombre" class="form-label">Nombre completo</label>
@@ -99,13 +94,8 @@
                             </div>
                             
                             <div class="mb-3">
-                                <label for="negocio" class="form-label">Nombre de tu negocio</label>
-                                <input type="text" class="form-control" id="negocio" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="telefono" class="form-label">Teléfono (con WhatsApp)</label>
-                                <input type="tel" class="form-control" id="telefono" required>
+                                <label for="negocio" class="form-label">¿Qué vendes? (opcional)</label>
+                                <input type="text" class="form-control" id="negocio">
                             </div>
                             
                             <div class="mb-3">
@@ -120,10 +110,10 @@
                             
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="terms" required>
-                                <label class="form-check-label" for="terms">Acepto los <a href="/terms" target="_blank">términos y condiciones</a></label>
+                                <label class="form-check-label" for="terms">Acepto los términos y condiciones</label>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary w-100" id="registerButton">Crear cuenta</button>
+                            <button type="submit" class="btn btn-primary w-100" id="registerButton">Registrarse</button>
                         </form>
                         
                         <hr>
@@ -143,17 +133,12 @@
         </div>
     </footer>
 
-    <!-- Cargar Supabase desde CDN -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- Cargar nuestro cliente API -->
-    <script src="api-client.js"></script>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const registerForm = document.getElementById('registerForm');
             const registerButton = document.getElementById('registerButton');
             const registerError = document.getElementById('register-error');
+            const registerSuccess = document.getElementById('register-success');
             
             registerForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -161,61 +146,63 @@
                 const nombre = document.getElementById('nombre').value;
                 const email = document.getElementById('email').value;
                 const negocio = document.getElementById('negocio').value;
-                const telefono = document.getElementById('telefono').value;
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 
                 try {
-                    // Validar contraseñas
+                    // Validar que las contraseñas coincidan
                     if (password !== confirmPassword) {
                         throw new Error('Las contraseñas no coinciden');
                     }
                     
                     // Mostrar indicador de carga
-                    registerButton.innerHTML = 'Creando cuenta...';
+                    registerButton.innerHTML = 'Procesando...';
                     registerButton.disabled = true;
                     registerError.classList.add('d-none');
+                    registerSuccess.classList.add('d-none');
                     
                     console.log('Intentando registrar usuario:', email);
                     
                     // Verificar que apiClient esté definido
-                    if (typeof apiClient === 'undefined') {
+                    if (typeof window.apiClient === 'undefined') {
                         throw new Error('apiClient no está definido. Verifica que api-client.js se haya cargado correctamente.');
                     }
                     
                     // Usar el apiClient
                     try {
-                        const result = await apiClient.post('/api/users/register', {
+                        const result = await window.apiClient.post('/api/users/register', {
                             nombre: nombre,
                             email: email,
                             negocio: negocio,
-                            telefono: telefono,
-                            password: password
+                            password: password,
+                            telefono: '' // Campo opcional
                         });
                         
                         console.log('Resultado de registro:', result);
                         
+                        // Mostrar mensaje de éxito
+                        registerSuccess.classList.remove('d-none');
+                        
                         // La redirección ya está manejada en apiClient.post
                     } catch (apiError) {
                         console.error('Error de registro:', apiError);
-                        let errorMessage = 'Error al crear la cuenta';
                         
-                        if (apiError.data && apiError.data.detail) {
-                            errorMessage = apiError.data.detail;
-                        } else if (apiError.message) {
-                            errorMessage = apiError.message;
+                        // Manejar errores específicos
+                        if (apiError.status === 400 && apiError.data && apiError.data.detail) {
+                            registerError.textContent = apiError.data.detail;
+                        } else {
+                            registerError.textContent = 'Error al registrar: ' + (apiError.message || 'Verifica los datos ingresados');
                         }
                         
-                        registerError.textContent = errorMessage;
                         registerError.classList.remove('d-none');
                     }
                 } catch (error) {
                     console.error('Error de registro:', error);
-                    registerError.textContent = error.message || 'Error al crear la cuenta. Por favor, intenta nuevamente.';
+                    registerError.textContent = error.message || 'Error al registrar. Por favor, intenta nuevamente.';
                     registerError.classList.remove('d-none');
                 } finally {
                     // Restaurar botón
-                    registerButton.innerHTML = 'Crear cuenta';
+                    registerButton.innerHTML = 'Registrarse';
                     registerButton.disabled = false;
                 }
             });

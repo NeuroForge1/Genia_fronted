@@ -31,17 +31,11 @@
             margin-top: 100px;
         }
     </style>
-    <!-- Configuración global -->
-    <script>
-        // Configuración de GENIA
-        window.GENIA_CONFIG = {
-            // Credenciales de Supabase
-            supabase: {
-                url: "https://axfcmtrhsvmtzqqhxwul.supabase.co",
-                anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ"
-            }
-        };
-    </script>
+    <!-- Cargar Supabase desde CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Cargar nuestro cliente API -->
+    <script src="api-client.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -127,12 +121,6 @@
         </div>
     </footer>
 
-    <!-- Cargar Supabase desde CDN -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- Cargar nuestro cliente API -->
-    <script src="api-client.js"></script>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
@@ -154,13 +142,13 @@
                     console.log('Intentando iniciar sesión con:', email);
                     
                     // Verificar que apiClient esté definido
-                    if (typeof apiClient === 'undefined') {
+                    if (typeof window.apiClient === 'undefined') {
                         throw new Error('apiClient no está definido. Verifica que api-client.js se haya cargado correctamente.');
                     }
                     
                     // Usar el apiClient
                     try {
-                        const result = await apiClient.post('/auth/login', {
+                        const result = await window.apiClient.post('/auth/login', {
                             email: email,
                             password: password
                         });

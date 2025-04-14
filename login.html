@@ -5,11 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genia - Iniciar Sesión</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    
-    <!-- Cargar Supabase directamente -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        footer {
+            margin-top: 100px;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -49,6 +70,9 @@
                         <h3 class="mb-0">Iniciar Sesión</h3>
                     </div>
                     <div class="card-body">
+                        <div id="login-error" class="alert alert-danger d-none" role="alert">
+                            Error al iniciar sesión. Por favor, verifica tus credenciales.
+                        </div>
                         <form id="loginForm">
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
@@ -63,7 +87,7 @@
                                 <label class="form-check-label" for="rememberMe">Recordarme</label>
                             </div>
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                                <button type="submit" class="btn btn-primary" id="loginButton">Iniciar Sesión</button>
                             </div>
                         </form>
                         <div class="mt-3 text-center">
@@ -85,15 +109,17 @@
         </div>
     </footer>
 
+    <!-- Cargar Supabase directamente desde CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Configuración de Supabase directamente en la página
+        // Inicializar Supabase
         const SUPABASE_URL = "https://axfcmtrhsvmtzqqhxwul.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZmNtdHJoc3ZtdHpxcWh4d3VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MjA2MzksImV4cCI6MjA1OTM5NjYzOX0.F7X3QI2AL90Q-XZjWceSuW45vDMBjz7txTqge4lwxtQ";
         
         // Crear cliente de Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // Implementación del cliente API directamente en la página
         const apiClient = {
@@ -144,6 +170,8 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
+            const loginButton = document.getElementById('loginButton');
+            const loginError = document.getElementById('login-error');
             
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -153,40 +181,44 @@
                 
                 try {
                     // Mostrar indicador de carga
-                    document.querySelector('button[type="submit"]').innerHTML = 'Iniciando sesión...';
-                    document.querySelector('button[type="submit"]').disabled = true;
+                    loginButton.innerHTML = 'Iniciando sesión...';
+                    loginButton.disabled = true;
+                    loginError.classList.add('d-none');
                     
                     console.log('Intentando iniciar sesión con:', email);
                     
                     // Llamar directamente a Supabase para autenticación
-                    const { data: authData, error } = await supabase.auth.signInWithPassword({
+                    const { data, error } = await supabase.auth.signInWithPassword({
                         email: email,
                         password: password
                     });
                     
-                    console.log('Resultado de autenticación:', authData);
+                    console.log('Resultado de autenticación:', data);
                     
                     if (error) {
                         console.error('Error de autenticación:', error);
-                        alert('Error al iniciar sesión: ' + error.message);
-                    } else if (authData.session) {
+                        loginError.textContent = 'Error al iniciar sesión: ' + error.message;
+                        loginError.classList.remove('d-none');
+                    } else if (data.session) {
                         // Guardar token en localStorage
-                        localStorage.setItem('genia_token', authData.session.access_token);
-                        localStorage.setItem('genia_user', JSON.stringify(authData.user));
+                        localStorage.setItem('genia_token', data.session.access_token);
+                        localStorage.setItem('genia_user', JSON.stringify(data.user));
                         
                         // Redirigir al dashboard
                         alert('Inicio de sesión exitoso. Redirigiendo al dashboard...');
                         window.location.href = '/dashboard';
                     } else {
-                        alert('Error de autenticación. Por favor, verifica tus credenciales.');
+                        loginError.textContent = 'Error de autenticación. Por favor, verifica tus credenciales.';
+                        loginError.classList.remove('d-none');
                     }
                 } catch (error) {
                     console.error('Error de login:', error);
-                    alert('Error al iniciar sesión. Por favor, intenta nuevamente.');
+                    loginError.textContent = 'Error al iniciar sesión. Por favor, intenta nuevamente.';
+                    loginError.classList.remove('d-none');
                 } finally {
                     // Restaurar botón
-                    document.querySelector('button[type="submit"]').innerHTML = 'Iniciar Sesión';
-                    document.querySelector('button[type="submit"]').disabled = false;
+                    loginButton.innerHTML = 'Iniciar Sesión';
+                    loginButton.disabled = false;
                 }
             });
         });

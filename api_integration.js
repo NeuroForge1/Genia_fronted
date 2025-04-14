@@ -1,548 +1,220 @@
-// Inicialización del objeto geniaApi
-window.geniaApi = window.geniaApi || {};
+// API Integration para GENIA
+// Este archivo conecta el frontend con el backend utilizando las rutas API correctas
 
-// Configuración básica de la API
-geniaApi.config = {
-  baseUrl: 'https://genia-backend.onrender.com',
-  version: 'v1',
-  timeout: 30000
-};
+// URL base del backend
+const API_BASE_URL = 'https://genia-backend.onrender.com';
 
-// Funciones de autenticación
-geniaApi.auth = {
-  // Registrar un nuevo usuario
-  async register(userData) {
+// Cliente API para realizar llamadas al backend
+const geniaApi = {
+  // Función para realizar solicitudes GET
+  async get(endpoint) {
     try {
-      const response = await fetch(`${geniaApi.config.baseUrl}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      });
+      // Asegurarse de que el endpoint comience con /api/ si es necesario
+      const url = endpoint.startsWith('/api/') 
+        ? `${API_BASE_URL}${endpoint}` 
+        : `${API_BASE_URL}/api${endpoint}`;
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error en el registro');
-      }
-      
-      const data = await response.json();
-      
-      // Guardar token en localStorage
-      if (data.token) {
-        localStorage.setItem('genia_token', data.token);
-        localStorage.setItem('genia_user', JSON.stringify(data.user));
-      }
-      
-      return {
-        success: true,
-        user: data.user,
-        token: data.token
-      };
-    } catch (error) {
-      console.error('Error en registro:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Iniciar sesión
-  async login(email, password) {
-    try {
-      const response = await fetch(`${geniaApi.config.baseUrl}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error en el inicio de sesión');
-      }
-      
-      const data = await response.json();
-      
-      // Guardar token en localStorage
-      if (data.token) {
-        localStorage.setItem('genia_token', data.token);
-        localStorage.setItem('genia_user', JSON.stringify(data.user));
-      }
-      
-      return {
-        success: true,
-        user: data.user,
-        token: data.token
-      };
-    } catch (error) {
-      console.error('Error en login:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Cerrar sesión
-  logout() {
-    localStorage.removeItem('genia_token');
-    localStorage.removeItem('genia_user');
-    window.location.href = '/index.html';
-  },
-  
-  // Verificar si el usuario está autenticado
-  isAuthenticated() {
-    return !!localStorage.getItem('genia_token');
-  },
-  
-  // Obtener el token actual
-  getToken() {
-    return localStorage.getItem('genia_token');
-  },
-  
-  // Obtener el usuario actual
-  getCurrentUser() {
-    const userStr = localStorage.getItem('genia_user');
-    return userStr ? JSON.parse(userStr) : null;
-  }
-};
-
-// Funciones para gestionar usuarios
-geniaApi.users = {
-  // Obtener perfil del usuario
-  async getProfile() {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/users/profile`, {
+      const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener perfil');
-      }
-      
-      const data = await response.json();
-      return {
-        success: true,
-        profile: data
-      };
-    } catch (error) {
-      console.error('Error al obtener perfil:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Actualizar perfil del usuario
-  async updateProfile(profileData) {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/users/profile`, {
-        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(profileData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar perfil');
-      }
-      
-      const data = await response.json();
-      
-      // Actualizar usuario en localStorage
-      localStorage.setItem('genia_user', JSON.stringify(data));
-      
-      return {
-        success: true,
-        profile: data
-      };
-    } catch (error) {
-      console.error('Error al actualizar perfil:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  }
-};
-
-// Funciones para gestionar créditos
-geniaApi.credits = {
-  // Obtener créditos del usuario
-  async getCredits() {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/credits`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
         }
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener créditos');
+        throw new Error(`Error en la solicitud: ${response.status}`);
       }
       
-      const data = await response.json();
-      return {
-        success: true,
-        credits: data.credits,
-        plan: data.plan
-      };
+      return await response.json();
     } catch (error) {
-      console.error('Error al obtener créditos:', error);
-      return {
-        success: false,
-        message: error.message
-      };
+      console.error('Error en la solicitud GET:', error);
+      throw error;
     }
   },
   
-  // Usar créditos
-  async useCredits(amount, description) {
+  // Función para realizar solicitudes POST
+  async post(endpoint, data) {
     try {
-      const token = geniaApi.auth.getToken();
+      // Asegurarse de que el endpoint comience con /api/ si es necesario
+      const url = endpoint.startsWith('/api/') 
+        ? `${API_BASE_URL}${endpoint}` 
+        : `${API_BASE_URL}/api${endpoint}`;
       
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/credits/use`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
         },
-        body: JSON.stringify({ amount, description })
+        body: JSON.stringify(data)
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al usar créditos');
+        throw new Error(`Error en la solicitud: ${response.status}`);
       }
       
-      const data = await response.json();
-      return {
-        success: true,
-        remainingCredits: data.remainingCredits
-      };
+      return await response.json();
     } catch (error) {
-      console.error('Error al usar créditos:', error);
-      return {
-        success: false,
-        message: error.message
-      };
+      console.error('Error en la solicitud POST:', error);
+      throw error;
+    }
+  },
+  
+  // Servicios de autenticación
+  auth: {
+    // Iniciar sesión
+    async login(email, password) {
+      try {
+        const data = await geniaApi.post('/api/auth/login', { email, password });
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+        return data;
+      } catch (error) {
+        console.error('Error en login:', error);
+        throw error;
+      }
+    },
+    
+    // Cerrar sesión
+    logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    },
+    
+    // Registrar nuevo usuario
+    async register(email, password, userData) {
+      try {
+        const data = await geniaApi.post('/api/auth/register', { email, password, ...userData });
+        return { success: true, data };
+      } catch (error) {
+        console.error('Error en registro:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Iniciar sesión con Google
+    async signInWithGoogle() {
+      try {
+        // Redireccionar a la página de autenticación de Google
+        window.location.href = `${API_BASE_URL}/api/auth/google`;
+        return { success: true };
+      } catch (error) {
+        console.error('Error en inicio de sesión con Google:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Obtener usuario actual
+    getCurrentUser() {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    },
+    
+    // Verificar si el usuario está autenticado
+    isAuthenticated() {
+      return !!localStorage.getItem('token');
+    }
+  },
+  
+  // Servicios de usuario
+  users: {
+    // Obtener todos los usuarios
+    async getAll() {
+      return await geniaApi.get('/api/users');
+    },
+    
+    // Obtener usuario por ID
+    async getById(userId) {
+      return await geniaApi.get(`/api/users/${userId}`);
+    },
+    
+    // Obtener usuarios pendientes
+    async getPending() {
+      return await geniaApi.get('/api/users/pending');
+    },
+    
+    // Aprobar usuario
+    async approve(userId) {
+      return await geniaApi.post(`/api/users/${userId}/approve`);
+    },
+    
+    // Rechazar usuario
+    async reject(userId) {
+      return await geniaApi.post(`/api/users/${userId}/reject`);
+    },
+    
+    // Obtener estadísticas de usuarios
+    async getStats() {
+      return await geniaApi.get('/api/users/stats');
+    }
+  },
+  
+  // Servicios del MCP (Motor Central de Procesamiento)
+  mcp: {
+    // Ejecutar acción en el MCP
+    async executeAction(action, params) {
+      return await geniaApi.post('/api/mcp/actions', { action, params });
+    },
+    
+    // Obtener historial de acciones
+    async getActionHistory(userId) {
+      return await geniaApi.get(`/api/mcp/actions/history/${userId}`);
+    },
+    
+    // Procesar comando de voz
+    async processVoiceCommand(audioData, userId) {
+      const formData = new FormData();
+      formData.append('audio', audioData);
+      formData.append('userId', userId);
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/mcp/voice-command`, {
+          method: 'POST',
+          headers: {
+            'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+          },
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error en la solicitud: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Error al procesar comando de voz:', error);
+        throw error;
+      }
+    }
+  },
+  
+  // Servicios de integración
+  integrations: {
+    // Obtener integraciones disponibles
+    async getAvailable() {
+      return await geniaApi.get('/api/integrations/available');
+    },
+    
+    // Obtener integraciones de un usuario
+    async getUserIntegrations(userId) {
+      return await geniaApi.get(`/api/integrations/user/${userId}`);
+    },
+    
+    // Conectar una integración
+    async connect(userId, platform, authData) {
+      return await geniaApi.post(`/api/integrations/user/${userId}/platform/${platform}/connect`, authData);
+    },
+    
+    // Desconectar una integración
+    async disconnect(userId, platform) {
+      return await geniaApi.post(`/api/integrations/user/${userId}/platform/${platform}/disconnect`);
     }
   }
 };
 
-// Funciones para gestionar clones
-geniaApi.clones = {
-  // Obtener todos los clones disponibles
-  async getClones() {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/clones`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener clones');
-      }
-      
-      const data = await response.json();
-      return {
-        success: true,
-        clones: data
-      };
-    } catch (error) {
-      console.error('Error al obtener clones:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Obtener un clon específico
-  async getClone(cloneId) {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/clones/${cloneId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener clon');
-      }
-      
-      const data = await response.json();
-      return {
-        success: true,
-        clone: data
-      };
-    } catch (error) {
-      console.error('Error al obtener clon:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  }
-};
-
-// Funciones para gestionar tareas
-geniaApi.tasks = {
-  // Crear una nueva tarea
-  async createTask(taskData) {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/tasks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(taskData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear tarea');
-      }
-      
-      const data = await response.json();
-      return {
-        success: true,
-        task: data
-      };
-    } catch (error) {
-      console.error('Error al crear tarea:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Obtener todas las tareas del usuario
-  async getTasks() {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/tasks`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener tareas');
-      }
-      
-      const data = await response.json();
-      return {
-        success: true,
-        tasks: data
-      };
-    } catch (error) {
-      console.error('Error al obtener tareas:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Obtener una tarea específica
-  async getTask(taskId) {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/tasks/${taskId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al obtener tarea');
-      }
-      
-      const data = await response.json();
-      return {
-        success: true,
-        task: data
-      };
-    } catch (error) {
-      console.error('Error al obtener tarea:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Actualizar una tarea
-  async updateTask(taskId, taskData) {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(taskData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar tarea');
-      }
-      
-      const data = await response.json();
-      return {
-        success: true,
-        task: data
-      };
-    } catch (error) {
-      console.error('Error al actualizar tarea:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  },
-  
-  // Eliminar una tarea
-  async deleteTask(taskId) {
-    try {
-      const token = geniaApi.auth.getToken();
-      
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-      
-      const response = await fetch(`${geniaApi.config.baseUrl}/tasks/${taskId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al eliminar tarea');
-      }
-      
-      return {
-        success: true
-      };
-    } catch (error) {
-      console.error('Error al eliminar tarea:', error);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  }
-};
-
-// Funciones de utilidad
-geniaApi.utils = {
-  // Formatear fecha
-  formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  },
-  
-  // Formatear número con separador de miles
-  formatNumber(number) {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  },
-  
-  // Validar email
-  validateEmail(email) {
-    const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
-  }
-};
-
-// Exportar el objeto geniaApi globalmente
+// Exportar el cliente API
 window.geniaApi = geniaApi;
-
-console.log('API de GENIA inicializada correctamente');

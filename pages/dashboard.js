@@ -1,38 +1,61 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { useTheme } from '../context/ThemeContext';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
+import Loader from '../components/ui/Loader';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import supabaseService from '../services/supabaseService';
-import connectionService from '../services/connectionService';
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState({
-    checking: false,
-    results: null
+  const [userData, setUserData] = useState(null);
+  const [stats, setStats] = useState({
+    creditsUsed: 0,
+    creditsTotal: 100,
+    activeClones: 0,
+    funnelsGenerated: 0,
+    contentsCreated: 0
   });
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    // Verificar autenticación al cargar la página
-    const checkAuth = async () => {
+    async function fetchUserData() {
       try {
-        const currentUser = await supabaseService.getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
-        } else {
-          // Redirigir a login si no hay usuario autenticado
+        const user = await supabaseService.getCurrentUser();
+        if (!user) {
           window.location.href = '/login';
+          return;
         }
-      } catch (error) {
-        console.error('Error al verificar autenticación:', error);
-        setError('Error al verificar autenticación. Por favor, inicia sesión nuevamente.');
-      } finally {
+        
+        setUserData(user);
+        
+        // Simulación de datos para demostración
+        setStats({
+          creditsUsed: 42,
+          creditsTotal: 100,
+          activeClones: 3,
+          funnelsGenerated: 2,
+          contentsCreated: 15
+        });
+        
+        setNotifications([
+          { id: 1, type: 'success', message: 'Tu embudo de ventas fue generado exitosamente.' },
+          { id: 2, type: 'info', message: 'Tienes 58 créditos disponibles para este mes.' },
+          { id: 3, type: 'warning', message: 'Tu prueba gratuita termina en 3 días.' }
+        ]);
+        
         setLoading(false);
+      } catch (error) {
+        console.error('Error al cargar datos del usuario:', error);
+        window.location.href = '/login';
       }
-    };
-
-    checkAuth();
+    }
+    
+    fetchUserData();
   }, []);
 
   const handleLogout = async () => {
@@ -41,445 +64,451 @@ export default function Dashboard() {
       window.location.href = '/login';
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
-      setError('Error al cerrar sesión. Por favor, intenta nuevamente.');
-    }
-  };
-
-  const checkConnections = async () => {
-    setConnectionStatus({ checking: true, results: null });
-    try {
-      const results = await connectionService.checkAllConnections();
-      setConnectionStatus({ checking: false, results });
-    } catch (error) {
-      console.error('Error al verificar conexiones:', error);
-      setConnectionStatus({ 
-        checking: false, 
-        results: { 
-          status: 'error', 
-          message: 'Error al verificar conexiones', 
-          error 
-        } 
-      });
     }
   };
 
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Cargando dashboard...</p>
-        
-        <style jsx>{`
-          .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-          }
-          .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #4a6cf7;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+        <Loader size="large" text="Cargando tu dashboard..." />
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="dashboard-container">
       <Head>
         <title>Dashboard - GENIA</title>
         <meta name="description" content="Panel de control de GENIA" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="dashboard-container">
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <h2>GENIA</h2>
+      <header className="dashboard-header">
+        <div className="container">
+          <div className="header-content">
+            <div className="logo-section">
+              <Link href="/dashboard" className="logo">
+                GENIA
+              </Link>
+            </div>
+            
+            <nav className="main-nav">
+              <Link href="/dashboard" className="nav-item active">
+                Dashboard
+              </Link>
+              <Link href="/ai-tracker" className="nav-item">
+                AI Tracker
+              </Link>
+              <Link href="/marketplace" className="nav-item">
+                Marketplace
+              </Link>
+              <Link href="/referrals" className="nav-item">
+                Referidos
+              </Link>
+            </nav>
+            
+            <div className="user-section">
+              <span className="user-name">{userData.user_metadata?.nombre || userData.email}</span>
+              <Button variant="outline" size="small" onClick={handleLogout}>
+                Cerrar sesión
+              </Button>
+            </div>
           </div>
-          <nav className="sidebar-nav">
-            <ul>
-              <li className="active">
-                <Link href="/dashboard">
-                  <span className="icon">📊</span> Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link href="/clones">
-                  <span className="icon">🤖</span> Clones Inteligentes
-                </Link>
-              </li>
-              <li>
-                <Link href="/embudos">
-                  <span className="icon">🔄</span> Embudos
-                </Link>
-              </li>
-              <li>
-                <Link href="/contenido">
-                  <span className="icon">📝</span> Contenido
-                </Link>
-              </li>
-              <li>
-                <Link href="/whatsapp">
-                  <span className="icon">💬</span> WhatsApp
-                </Link>
-              </li>
-              <li>
-                <Link href="/ai-tracker">
-                  <span className="icon">📈</span> AI Tracker
-                </Link>
-              </li>
-              <li>
-                <Link href="/marketplace">
-                  <span className="icon">🛒</span> Marketplace
-                </Link>
-              </li>
-              <li>
-                <Link href="/referidos">
-                  <span className="icon">👥</span> Referidos
-                </Link>
-              </li>
-              <li>
-                <Link href="/configuracion">
-                  <span className="icon">⚙️</span> Configuración
-                </Link>
-              </li>
-            </ul>
-          </nav>
-          <div className="sidebar-footer">
-            <button onClick={handleLogout} className="logout-btn">
-              <span className="icon">🚪</span> Cerrar sesión
-            </button>
+        </div>
+      </header>
+
+      <main className="dashboard-main">
+        <div className="container">
+          <div className="welcome-section">
+            <h1>Bienvenido, {userData.user_metadata?.nombre || 'Usuario'}</h1>
+            <p>Este es tu centro de control para gestionar tus clones de IA y automatizaciones.</p>
           </div>
-        </aside>
-
-        <main className="main-content">
-          <header className="dashboard-header">
-            <div className="header-title">
-              <h1>Dashboard</h1>
-              <p>Bienvenido, {user?.user_metadata?.nombre || user?.email}</p>
-            </div>
-            <div className="user-menu">
-              <div className="user-info">
-                <span className="user-avatar">{user?.email?.charAt(0).toUpperCase()}</span>
-                <span className="user-name">{user?.email}</span>
+          
+          <div className="stats-grid">
+            <Card className="stat-card">
+              <h3>Créditos</h3>
+              <div className="stat-value">
+                <span className="current">{stats.creditsUsed}</span>
+                <span className="separator">/</span>
+                <span className="total">{stats.creditsTotal}</span>
               </div>
-            </div>
-          </header>
-
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
-
-          <div className="dashboard-content">
-            <div className="welcome-card">
-              <h2>¡Bienvenido a GENIA!</h2>
-              <p>Tu plataforma SaaS basada en IA para crear clones inteligentes, generar embudos, contenido y automatizaciones desde WhatsApp.</p>
-              <div className="action-buttons">
-                <Link href="/clones" className="btn btn-primary">
-                  Crear Clone Inteligente
-                </Link>
-                <Link href="/embudos" className="btn btn-secondary">
-                  Generar Embudo
-                </Link>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ width: `${(stats.creditsUsed / stats.creditsTotal) * 100}%` }}
+                ></div>
               </div>
-            </div>
-
-            <div className="stats-grid">
-              <div className="stat-card">
-                <h3>Clones Activos</h3>
-                <p className="stat-value">0</p>
-              </div>
-              <div className="stat-card">
-                <h3>Embudos Creados</h3>
-                <p className="stat-value">0</p>
-              </div>
-              <div className="stat-card">
-                <h3>Mensajes Enviados</h3>
-                <p className="stat-value">0</p>
-              </div>
-              <div className="stat-card">
-                <h3>Contenidos Generados</h3>
-                <p className="stat-value">0</p>
-              </div>
-            </div>
-
-            <div className="connection-status-card">
-              <h3>Estado de Conexiones</h3>
-              <button 
-                onClick={checkConnections} 
-                className="btn btn-primary"
-                disabled={connectionStatus.checking}
-              >
-                {connectionStatus.checking ? 'Verificando...' : 'Verificar Conexiones'}
-              </button>
-              
-              {connectionStatus.results && (
-                <div className={`connection-results ${connectionStatus.results.status}`}>
-                  <h4>{connectionStatus.results.message}</h4>
-                  {connectionStatus.results.results && (
-                    <ul>
-                      {Object.entries(connectionStatus.results.results).map(([key, value]) => (
-                        <li key={key}>
-                          <strong>{key}:</strong> {value.status === 'success' ? '✅' : '❌'} {value.message}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+              <p className="stat-description">Créditos utilizados este mes</p>
+            </Card>
+            
+            <Card className="stat-card">
+              <h3>Clones Activos</h3>
+              <div className="stat-value">{stats.activeClones}</div>
+              <p className="stat-description">Clones de IA trabajando para ti</p>
+              <Button variant="outline" size="small" className="stat-action">
+                Gestionar clones
+              </Button>
+            </Card>
+            
+            <Card className="stat-card">
+              <h3>Embudos</h3>
+              <div className="stat-value">{stats.funnelsGenerated}</div>
+              <p className="stat-description">Embudos de ventas generados</p>
+              <Button variant="outline" size="small" className="stat-action">
+                Crear nuevo
+              </Button>
+            </Card>
+            
+            <Card className="stat-card">
+              <h3>Contenidos</h3>
+              <div className="stat-value">{stats.contentsCreated}</div>
+              <p className="stat-description">Piezas de contenido creadas</p>
+              <Button variant="outline" size="small" className="stat-action">
+                Crear contenido
+              </Button>
+            </Card>
+          </div>
+          
+          <div className="dashboard-sections">
+            <div className="section-left">
+              <Card className="clones-section">
+                <h2>Tus Clones de IA</h2>
+                <div className="clones-list">
+                  <div className="clone-item">
+                    <div className="clone-icon ceo">CEO</div>
+                    <div className="clone-details">
+                      <h4>GENIA CEO</h4>
+                      <p>Estrategia y crecimiento de negocio</p>
+                    </div>
+                    <Button variant="primary" size="small">Activar</Button>
+                  </div>
+                  
+                  <div className="clone-item">
+                    <div className="clone-icon content">Content</div>
+                    <div className="clone-details">
+                      <h4>GENIA Content</h4>
+                      <p>Creación de contenido para redes</p>
+                    </div>
+                    <Button variant="primary" size="small">Activar</Button>
+                  </div>
+                  
+                  <div className="clone-item">
+                    <div className="clone-icon funnel">Funnel</div>
+                    <div className="clone-details">
+                      <h4>GENIA Funnel</h4>
+                      <p>Embudos de venta y conversión</p>
+                    </div>
+                    <Button variant="primary" size="small">Activar</Button>
+                  </div>
                 </div>
-              )}
+              </Card>
+            </div>
+            
+            <div className="section-right">
+              <Card className="notifications-section">
+                <h2>Notificaciones</h2>
+                <div className="notifications-list">
+                  {notifications.map(notification => (
+                    <Alert 
+                      key={notification.id}
+                      type={notification.type}
+                      dismissible={true}
+                      className="notification-item"
+                    >
+                      {notification.message}
+                    </Alert>
+                  ))}
+                </div>
+              </Card>
+              
+              <Card className="quick-actions">
+                <h2>Acciones Rápidas</h2>
+                <div className="actions-grid">
+                  <Button variant="secondary" className="action-button">
+                    Generar Embudo
+                  </Button>
+                  <Button variant="secondary" className="action-button">
+                    Crear Contenido
+                  </Button>
+                  <Button variant="secondary" className="action-button">
+                    Invitar Amigo
+                  </Button>
+                  <Button variant="secondary" className="action-button">
+                    Soporte
+                  </Button>
+                </div>
+              </Card>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
+
+      <footer className="dashboard-footer">
+        <div className="container">
+          <p>© 2025 Genia AI. Todos los derechos reservados.</p>
+        </div>
+      </footer>
 
       <style jsx>{`
         .dashboard-container {
-          display: flex;
           min-height: 100vh;
-        }
-        .sidebar {
-          width: 260px;
-          background-color: #1a1f36;
-          color: white;
           display: flex;
           flex-direction: column;
         }
-        .sidebar-header {
-          padding: 20px;
-          border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .sidebar-header h2 {
-          margin: 0;
-          font-size: 24px;
-        }
-        .sidebar-nav {
-          flex: 1;
-          padding: 20px 0;
-        }
-        .sidebar-nav ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-        .sidebar-nav li {
-          margin-bottom: 5px;
-        }
-        .sidebar-nav li a {
+        
+        .loading-container {
           display: flex;
+          justify-content: center;
           align-items: center;
-          padding: 12px 20px;
-          color: rgba(255,255,255,0.7);
-          text-decoration: none;
-          transition: all 0.3s;
+          height: 100vh;
+          background-color: var(--color-bg-dark);
         }
-        .sidebar-nav li.active a,
-        .sidebar-nav li a:hover {
-          background-color: rgba(255,255,255,0.1);
-          color: white;
-        }
-        .icon {
-          margin-right: 10px;
-          font-size: 18px;
-        }
-        .sidebar-footer {
-          padding: 20px;
-          border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .logout-btn {
-          display: flex;
-          align-items: center;
-          width: 100%;
-          padding: 10px;
-          background: none;
-          border: 1px solid rgba(255,255,255,0.2);
-          border-radius: 4px;
-          color: rgba(255,255,255,0.7);
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-        .logout-btn:hover {
-          background-color: rgba(255,255,255,0.1);
-          color: white;
-        }
-        .main-content {
-          flex: 1;
-          background-color: #f5f7fb;
-        }
+        
         .dashboard-header {
+          background-color: var(--color-bg-light);
+          border-bottom: 1px solid var(--color-border);
+          padding: 15px 0;
+          position: sticky;
+          top: 0;
+          z-index: var(--z-index-sticky);
+        }
+        
+        .header-content {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 20px 30px;
-          background-color: white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .header-title h1 {
-          margin: 0;
-          font-size: 24px;
-          color: #1a1f36;
-        }
-        .header-title p {
-          margin: 5px 0 0;
-          color: #6b7280;
-        }
-        .user-menu {
-          display: flex;
-          align-items: center;
-        }
-        .user-info {
-          display: flex;
-          align-items: center;
-        }
-        .user-avatar {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          background-color: #4a6cf7;
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          margin-right: 10px;
-        }
-        .user-name {
-          color: #1a1f36;
-          font-weight: 500;
-        }
-        .dashboard-content {
-          padding: 30px;
-        }
-        .error-message {
-          background-color: #ffebee;
-          color: #c62828;
-          padding: 15px;
-          border-radius: 4px;
-          margin-bottom: 20px;
-        }
-        .welcome-card {
-          background-color: white;
-          border-radius: 8px;
-          padding: 30px;
-          margin-bottom: 30px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .welcome-card h2 {
-          margin-top: 0;
-          color: #1a1f36;
-        }
-        .action-buttons {
-          display: flex;
-          gap: 15px;
-          margin-top: 20px;
-        }
-        .btn {
-          padding: 12px 20px;
-          border-radius: 4px;
-          font-weight: 500;
+        
+        .logo {
+          font-size: 1.5rem;
+          font-weight: var(--font-weight-bold);
+          color: var(--color-primary);
           text-decoration: none;
-          cursor: pointer;
-          transition: all 0.3s;
-          border: none;
         }
-        .btn-primary {
-          background-color: #4a6cf7;
-          color: white;
+        
+        .main-nav {
+          display: flex;
+          gap: 20px;
         }
-        .btn-primary:hover {
-          background-color: #3a5ce5;
+        
+        .nav-item {
+          color: var(--color-text-secondary);
+          text-decoration: none;
+          padding: 5px 10px;
+          border-radius: var(--border-radius-md);
+          transition: all var(--transition-fast);
         }
-        .btn-primary:disabled {
-          background-color: #a5b4fc;
-          cursor: not-allowed;
+        
+        .nav-item:hover {
+          color: var(--color-primary);
+          background-color: rgba(103, 248, 192, 0.1);
         }
-        .btn-secondary {
-          background-color: #f3f4f6;
-          color: #1a1f36;
+        
+        .nav-item.active {
+          color: var(--color-primary);
+          background-color: rgba(103, 248, 192, 0.1);
         }
-        .btn-secondary:hover {
-          background-color: #e5e7eb;
+        
+        .user-section {
+          display: flex;
+          align-items: center;
+          gap: 15px;
         }
+        
+        .user-name {
+          font-weight: var(--font-weight-medium);
+        }
+        
+        .dashboard-main {
+          flex: 1;
+          padding: 40px 0;
+        }
+        
+        .welcome-section {
+          margin-bottom: 30px;
+        }
+        
+        .welcome-section h1 {
+          color: var(--color-primary);
+          margin-bottom: 10px;
+        }
+        
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          grid-template-columns: repeat(4, 1fr);
           gap: 20px;
-          margin-bottom: 30px;
+          margin-bottom: 40px;
         }
+        
         .stat-card {
-          background-color: white;
-          border-radius: 8px;
           padding: 20px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          text-align: center;
         }
-        .stat-card h3 {
-          margin-top: 0;
-          color: #6b7280;
-          font-size: 16px;
-          font-weight: 500;
-        }
+        
         .stat-value {
-          font-size: 36px;
-          font-weight: bold;
-          color: #1a1f36;
-          margin: 10px 0 0;
+          font-size: 2.5rem;
+          font-weight: var(--font-weight-bold);
+          color: var(--color-primary);
+          margin: 10px 0;
+          display: flex;
+          justify-content: center;
+          align-items: baseline;
         }
-        .connection-status-card {
-          background-color: white;
-          border-radius: 8px;
-          padding: 20px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        
+        .stat-value .separator {
+          margin: 0 5px;
+          color: var(--color-text-muted);
         }
-        .connection-status-card h3 {
-          margin-top: 0;
-          color: #1a1f36;
+        
+        .stat-value .total {
+          color: var(--color-text-muted);
+          font-size: 1.5rem;
         }
-        .connection-results {
-          margin-top: 20px;
-          padding: 15px;
+        
+        .progress-bar {
+          height: 8px;
+          background-color: var(--color-bg-dark);
+          border-radius: 4px;
+          margin: 10px 0;
+          overflow: hidden;
+        }
+        
+        .progress-fill {
+          height: 100%;
+          background-color: var(--color-primary);
           border-radius: 4px;
         }
-        .connection-results.success {
-          background-color: #e8f5e9;
-          color: #2e7d32;
+        
+        .stat-description {
+          color: var(--color-text-secondary);
+          margin-bottom: 15px;
         }
-        .connection-results.error {
-          background-color: #ffebee;
-          color: #c62828;
+        
+        .stat-action {
+          margin-top: auto;
         }
-        .connection-results ul {
-          margin-top: 10px;
-          padding-left: 20px;
+        
+        .dashboard-sections {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
         }
-        .connection-results li {
-          margin-bottom: 5px;
+        
+        .clones-section, .notifications-section, .quick-actions {
+          margin-bottom: 20px;
         }
-      `}</style>
-
-      <style jsx global>{`
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        
+        .clones-list {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+        
+        .clone-item {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 15px;
+          background-color: var(--color-bg-dark);
+          border-radius: var(--border-radius-md);
+        }
+        
+        .clone-icon {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-weight: var(--font-weight-bold);
+          font-size: 0.8rem;
+        }
+        
+        .clone-icon.ceo {
+          background-color: var(--color-secondary);
+        }
+        
+        .clone-icon.content {
+          background-color: var(--color-success);
+        }
+        
+        .clone-icon.funnel {
+          background-color: var(--color-warning);
+        }
+        
+        .clone-details {
+          flex: 1;
+        }
+        
+        .clone-details h4 {
+          margin: 0 0 5px 0;
+        }
+        
+        .clone-details p {
           margin: 0;
-          padding: 0;
-          background-color: #f5f7fb;
-          color: #333;
+          color: var(--color-text-secondary);
+          font-size: 0.9rem;
         }
-        * {
-          box-sizing: border-box;
+        
+        .notifications-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .notification-item {
+          margin: 0;
+        }
+        
+        .actions-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        
+        .action-button {
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 60px;
+        }
+        
+        .dashboard-footer {
+          background-color: var(--color-bg-light);
+          padding: 20px 0;
+          text-align: center;
+          color: var(--color-text-muted);
+          margin-top: auto;
+        }
+        
+        @media (max-width: 1024px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          
+          .dashboard-sections {
+            grid-template-columns: 1fr;
+          }
+        }
+        
+        @media (max-width: 640px) {
+          .header-content {
+            flex-direction: column;
+            gap: 15px;
+          }
+          
+          .main-nav {
+            width: 100%;
+            justify-content: space-between;
+          }
+          
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .actions-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </div>

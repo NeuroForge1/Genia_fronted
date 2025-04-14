@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
+    <!-- Importar Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -96,7 +98,9 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="services/api.js"></script>
+    <script src="config.js"></script>
+    <script src="services/supabaseService.js" type="module"></script>
+    <script src="api-client.js" type="module"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const registerForm = document.getElementById('registerForm');
@@ -122,20 +126,55 @@
                     document.querySelector('button[type="submit"]').innerHTML = 'Creando cuenta...';
                     document.querySelector('button[type="submit"]').disabled = true;
                     
-                    // Llamar a la API de registro
-                    const response = await apiClient.post('/api/users/register', {
-                        nombre: nombre,
-                        email: email,
-                        negocio: negocio,
-                        telefono: telefono,
-                        password: password
-                    });
-                    
-                    if (response.status === 'success') {
-                        alert('Cuenta creada correctamente. Por favor, inicia sesión.');
-                        window.location.href = '/login';
+                    // Inicializar Supabase directamente si apiClient no está disponible
+                    if (typeof apiClient === 'undefined') {
+                        console.log('Usando Supabase directamente para registro');
+                        
+                        // Crear cliente de Supabase con las credenciales del config
+                        const supabaseUrl = GENIA_CONFIG.supabase.url;
+                        const supabaseAnonKey = GENIA_CONFIG.supabase.anonKey;
+                        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+                        
+                        // Registrar usuario con Supabase
+                        const { data, error } = await supabase.auth.signUp({
+                            email: email,
+                            password: password,
+                            options: {
+                                data: {
+                                    nombre: nombre,
+                                    negocio: negocio,
+                                    telefono: telefono
+                                }
+                            }
+                        });
+                        
+                        if (error) {
+                            if (error.message.includes('already registered')) {
+                                alert('Este email ya está registrado. Por favor, utiliza otro o inicia sesión.');
+                            } else {
+                                throw error;
+                            }
+                        } else {
+                            alert('Cuenta creada correctamente. Por favor, inicia sesión.');
+                            window.location.href = '/login';
+                        }
                     } else {
-                        alert('Error al crear la cuenta. Por favor, intenta nuevamente.');
+                        // Usar apiClient si está disponible
+                        console.log('Usando apiClient para registro');
+                        const response = await apiClient.post('/api/users/register', {
+                            nombre: nombre,
+                            email: email,
+                            negocio: negocio,
+                            telefono: telefono,
+                            password: password
+                        });
+                        
+                        if (response.status === 'success') {
+                            alert('Cuenta creada correctamente. Por favor, inicia sesión.');
+                            window.location.href = '/login';
+                        } else {
+                            alert('Error al crear la cuenta. Por favor, intenta nuevamente.');
+                        }
                     }
                 } catch (error) {
                     console.error('Error de registro:', error);

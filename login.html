@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
+    <!-- Importar Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -83,7 +85,9 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="services/api.js"></script>
+    <script src="config.js"></script>
+    <script src="services/supabaseService.js" type="module"></script>
+    <script src="api-client.js" type="module"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
@@ -99,21 +103,51 @@
                     document.querySelector('button[type="submit"]').innerHTML = 'Iniciando sesión...';
                     document.querySelector('button[type="submit"]').disabled = true;
                     
-                    // Llamar a la API de autenticación
-                    const response = await apiClient.post('/auth/login', {
-                        email: email,
-                        password: password
-                    });
-                    
-                    if (response.token) {
-                        // Guardar token en localStorage
-                        localStorage.setItem('genia_token', response.token);
-                        localStorage.setItem('genia_user', JSON.stringify(response.user));
+                    // Inicializar Supabase directamente si apiClient no está disponible
+                    if (typeof apiClient === 'undefined') {
+                        console.log('Usando Supabase directamente para autenticación');
                         
-                        // Redirigir al dashboard
-                        window.location.href = '/dashboard';
+                        // Crear cliente de Supabase con las credenciales del config
+                        const supabaseUrl = GENIA_CONFIG.supabase.url;
+                        const supabaseAnonKey = GENIA_CONFIG.supabase.anonKey;
+                        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+                        
+                        // Iniciar sesión con Supabase
+                        const { data, error } = await supabase.auth.signInWithPassword({
+                            email: email,
+                            password: password
+                        });
+                        
+                        if (error) throw error;
+                        
+                        if (data.session) {
+                            // Guardar token en localStorage
+                            localStorage.setItem('genia_token', data.session.access_token);
+                            localStorage.setItem('genia_user', JSON.stringify(data.user));
+                            
+                            // Redirigir al dashboard
+                            window.location.href = '/dashboard';
+                        } else {
+                            alert('Error de autenticación. Por favor, verifica tus credenciales.');
+                        }
                     } else {
-                        alert('Error de autenticación. Por favor, verifica tus credenciales.');
+                        // Usar apiClient si está disponible
+                        console.log('Usando apiClient para autenticación');
+                        const response = await apiClient.post('/auth/login', {
+                            email: email,
+                            password: password
+                        });
+                        
+                        if (response.token) {
+                            // Guardar token en localStorage
+                            localStorage.setItem('genia_token', response.token);
+                            localStorage.setItem('genia_user', JSON.stringify(response.user));
+                            
+                            // Redirigir al dashboard
+                            window.location.href = '/dashboard';
+                        } else {
+                            alert('Error de autenticación. Por favor, verifica tus credenciales.');
+                        }
                     }
                 } catch (error) {
                     console.error('Error de login:', error);

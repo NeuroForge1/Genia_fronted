@@ -1,6 +1,8 @@
+"use client";
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase, SupabaseUser, UserProfile } from '../lib/supabase';
+import { supabase, SupabaseUser, UserProfile, handleAuthError, isValidEmail } from '../lib/supabase';
 
 // Definir tipos para el contexto de autenticación
 type User = {
@@ -17,6 +19,8 @@ type AuthContextType = {
   register: (email: string, password: string, name: string, businessName?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  error: string | null;
+  clearError: () => void;
 };
 
 // Crear el contexto de autenticación
@@ -26,7 +30,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  const clearError = () => setError(null);
 
   // Verificar si el usuario está autenticado al cargar la página
   useEffect(() => {
@@ -108,8 +115,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: profileData?.name || userData.user.user_metadata?.name || '',
             plan: profileData?.plan || 'free',
           });
+          
+          // Redirigir al dashboard si no estamos ya allí
+          if (window.location.pathname !== '/dashboard') {
+            router.push('/dashboard');
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          router.push('/login');
         }
       }
     );
@@ -120,19 +133,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   // Función para iniciar sesión
   const login = async (email: string, password: string) => {
     setLoading(true);
+    clearError();
+    
     try {
+      if (!email || !password) {
+        throw new Error('Por favor ingresa tu correo y contraseña');
+      }
+      
+      if (!isValidEmail(email)) {
+        throw new Error('Por favor ingresa un correo electrónico válido');
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        throw new Error(error.message || 'Error al iniciar sesión');
+        const errorMessage = handleAuthError(error);
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
 
       if (!data.user) {
@@ -157,9 +182,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         plan: profileData?.plan || 'free',
       });
 
+      // Almacenar token en localStorage para mejorar persistencia
+      localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+      
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      setError(error.message || 'Error al iniciar sesión');
       throw error;
     } finally {
       setLoading(false);
@@ -169,7 +198,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Función para registrar un nuevo usuario
   const register = async (email: string, password: string, name: string, businessName?: string) => {
     setLoading(true);
+    clearError();
+    
     try {
+      // Validaciones básicas
+      if (!email || !password || !name) {
+        throw new Error('Por favor completa todos los campos requeridos');
+      }
+      
+      if (!isValidEmail(email)) {
+        throw new Error('Por favor ingresa un correo electrónico válido');
+      }
+      
+      if (password.length < 6) {
+        throw new Error('La contraseña debe tener al menos 6 caracteres');
+      }
+      
+      // En desarrollo, permitir dominios de ejemplo
+      if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ALLOW_TEST_EMAILS === 'true') {
+        // Continuar con el registro incluso con dominios de ejemplo
+      }
+      
       // Registrar usuario en Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -183,7 +232,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
-        throw new Error(error.message || 'Error al registrar usuario');
+        const errorMessage = handleAuthError(error);
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
 
       if (!data.user) {
@@ -199,11 +250,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name,
             business_name: businessName,
             plan: 'free', // Plan por defecto para nuevos usuarios
+            credits: 25, // Créditos iniciales para nuevos usuarios
           },
         ]);
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
+        setError('Error al crear el perfil de usuario');
       }
 
       setUser({
@@ -213,9 +266,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         plan: 'free', // Plan por defecto para nuevos usuarios
       });
 
+      // Almacenar token en localStorage para mejorar persistencia
+      if (data.session) {
+        localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+      }
+      
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
+      setError(error.message || 'Error al registrar usuario');
       throw error;
     } finally {
       setLoading(false);
@@ -225,14 +284,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Función para cerrar sesión
   const logout = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
+        setError('Error al cerrar sesión');
       }
+      
+      // Limpiar token del localStorage
+      localStorage.removeItem('supabase.auth.token');
+      
       setUser(null);
       router.push('/login');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout error:', error);
+      setError(error.message || 'Error al cerrar sesión');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -245,6 +313,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         register,
         logout,
         isAuthenticated: !!user,
+        error,
+        clearError,
       }}
     >
       {children}

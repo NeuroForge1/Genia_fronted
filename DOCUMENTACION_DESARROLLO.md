@@ -81,6 +81,7 @@ El flujo de funcionamiento ideal de GENIA es:
      - `/src/hooks`: Hooks personalizados de React
      - `/src/lib`: Utilidades y configuraciones
      - `/src/lib/mcp`: Módulo Central de Procesos
+     - `/src/lib/connectors`: Conectores para plataformas externas
      - `/tests`: Pruebas de integración
 
 2. **Backend**:
@@ -167,6 +168,36 @@ El flujo de funcionamiento ideal de GENIA es:
 - ✅ Recomendaciones para desarrollo futuro
 - ✅ Documentación para desarrolladores
 
+### 10. Conectores para Plataformas Externas - COMPLETADO
+- ✅ Implementación de conectores para redes sociales en `/src/lib/connectors/social.ts`
+  - Facebook
+  - Twitter
+  - Instagram
+  - LinkedIn
+- ✅ Implementación de conectores para email marketing en `/src/lib/connectors/email.ts`
+  - Mailchimp
+  - SendGrid
+  - ConvertKit
+  - MailerLite
+- ✅ Integración con el MCP a través del ExecutorMCP en `/src/lib/mcp/executor.ts`
+- ✅ Pruebas de integración para todos los conectores en `/tests/connectors/`
+
+### 11. Panel de Administración - COMPLETADO
+- ✅ Interfaz principal en `/src/app/admin/page.tsx`
+- ✅ Gestión de credenciales de redes sociales en `/src/app/admin/social/[action]/page.tsx`
+- ✅ Gestión de credenciales de email marketing en `/src/app/admin/email/[action]/page.tsx`
+- ✅ Monitoreo de tareas ejecutadas en `/src/app/admin/tasks/[id]/page.tsx`
+- ✅ Esquema de base de datos para conectores en `/supabase/migrations/20250419_connectores_schema.sql`
+
+### 12. Elementos para Versión Beta - COMPLETADO
+- ✅ Configuración de entorno de staging con Docker Compose
+- ✅ Herramientas de monitoreo (Prometheus y Grafana)
+- ✅ Documentación para usuarios de los conectores
+- ✅ Proceso de onboarding para nuevos usuarios
+- ✅ Plan de rollback para manejar problemas críticos
+- ✅ Programa de beta testers
+- ✅ Configuración de límites y cuotas por plan de suscripción
+
 ## Lo que falta por hacer
 
 ### 1. Mejora del Análisis de Intenciones - PENDIENTE
@@ -175,31 +206,19 @@ El flujo de funcionamiento ideal de GENIA es:
 - ⬜ Añadir soporte para múltiples idiomas
 - ⬜ Implementar un sistema de retroalimentación para mejorar continuamente
 
-### 2. Ejecución de Tareas Reales - PENDIENTE
-- ⬜ Implementar conectores para plataformas de redes sociales (Facebook, Instagram, LinkedIn)
-- ⬜ Desarrollar integraciones con herramientas de email marketing (Mailchimp, SendGrid)
-- ⬜ Crear conectores para plataformas publicitarias (Google Ads, Facebook Ads)
-- ⬜ Implementar integraciones con herramientas de análisis (Google Analytics, Mixpanel)
-
-### 3. Panel de Administración - PENDIENTE
-- ⬜ Desarrollar interfaz para administradores
-- ⬜ Implementar gestión de usuarios y suscripciones
-- ⬜ Crear dashboard de métricas y analíticas
-- ⬜ Añadir herramientas de soporte y atención al cliente
-
-### 4. Mejoras de Experiencia de Usuario - PENDIENTE
+### 2. Mejoras de Experiencia de Usuario - PENDIENTE
 - ⬜ Implementar feedback en tiempo real durante la ejecución de tareas
 - ⬜ Desarrollar tutoriales interactivos para nuevos usuarios
 - ⬜ Crear dashboards personalizados según el tipo de usuario
 - ⬜ Mejorar la visualización de resultados y estadísticas
 
-### 5. Escalabilidad y Optimización - PENDIENTE
+### 3. Escalabilidad y Optimización - PENDIENTE
 - ⬜ Implementar sistema de caché para respuestas comunes
 - ⬜ Optimizar consultas a la base de datos
 - ⬜ Desarrollar un sistema de colas para tareas de larga duración
 - ⬜ Configurar auto-escalado en la infraestructura
 
-### 6. Aplicación Móvil - PENDIENTE
+### 4. Aplicación Móvil - PENDIENTE
 - ⬜ Desarrollar aplicación nativa para iOS y Android
 - ⬜ Implementar notificaciones push
 - ⬜ Añadir soporte para comandos por voz en móvil
@@ -253,6 +272,17 @@ OPENAI_API_KEY=[OPENAI_API_KEY]
 TWILIO_ACCOUNT_SID=[TWILIO_ACCOUNT_SID]
 TWILIO_AUTH_TOKEN=[TWILIO_AUTH_TOKEN]
 TWILIO_WHATSAPP_NUMBER=[TWILIO_WHATSAPP_NUMBER]
+
+# Facebook (para conectores de redes sociales)
+FACEBOOK_APP_ID=[FACEBOOK_APP_ID]
+FACEBOOK_APP_SECRET=[FACEBOOK_APP_SECRET]
+
+# Twitter (para conectores de redes sociales)
+TWITTER_API_KEY=[TWITTER_API_KEY]
+TWITTER_API_SECRET=[TWITTER_API_SECRET]
+
+# Mailchimp (para conectores de email marketing)
+MAILCHIMP_API_KEY=[MAILCHIMP_API_KEY]
 ```
 
 ## Estructura de la Base de Datos
@@ -302,6 +332,40 @@ TWILIO_WHATSAPP_NUMBER=[TWILIO_WHATSAPP_NUMBER]
    - `details`: Detalles de la acción (JSONB)
    - `created_at`: Fecha de creación
 
+6. **social_credentials**: Credenciales para conectores de redes sociales
+   - `id`: UUID (clave primaria)
+   - `user_id`: UUID (clave foránea a users.id)
+   - `platform`: Plataforma ('facebook', 'twitter', 'instagram', 'linkedin')
+   - `access_token`: Token de acceso
+   - `refresh_token`: Token de actualización (opcional)
+   - `expires_at`: Fecha de expiración del token
+   - `platform_user_id`: ID del usuario en la plataforma
+   - `page_id`: ID de la página (para Facebook/Instagram)
+   - `created_at`: Fecha de creación
+   - `updated_at`: Fecha de actualización
+
+7. **email_credentials**: Credenciales para conectores de email marketing
+   - `id`: UUID (clave primaria)
+   - `user_id`: UUID (clave foránea a users.id)
+   - `platform`: Plataforma ('mailchimp', 'sendgrid', 'convertkit', 'mailerlite')
+   - `api_key`: Clave API
+   - `server_prefix`: Prefijo del servidor (para Mailchimp)
+   - `platform_user_id`: ID del usuario en la plataforma
+   - `created_at`: Fecha de creación
+   - `updated_at`: Fecha de actualización
+
+8. **executed_tasks**: Registro de tareas ejecutadas por los conectores
+   - `id`: UUID (clave primaria)
+   - `user_id`: UUID (clave foránea a users.id)
+   - `task_type`: Tipo de tarea ('social_post', 'social_schedule', 'social_metrics', 'email_campaign', 'email_subscriber', 'email_metrics')
+   - `status`: Estado de la tarea ('pending', 'processing', 'completed', 'failed')
+   - `parameters`: Parámetros de la tarea (JSONB)
+   - `result`: Resultado de la tarea (JSONB)
+   - `error`: Mensaje de error (si aplica)
+   - `created_at`: Fecha de creación
+   - `updated_at`: Fecha de actualización
+   - `completed_at`: Fecha de finalización
+
 ### Políticas RLS (Row Level Security)
 
 Todas las tablas tienen políticas RLS configuradas para garantizar que:
@@ -339,17 +403,191 @@ Todas las tablas tienen políticas RLS configuradas para garantizar que:
 - Despliegue manual o mediante CI/CD configurado en Render
 - Variables de entorno configuradas en el panel de Render
 
+### Entorno de Staging
+- Configurado con Docker Compose en `/staging/`
+- Incluye servicios para frontend, backend, Supabase, Prometheus y Grafana
+- Instrucciones detalladas en `/staging/README.md`
+
+## Conectores para Plataformas Externas
+
+### Conectores de Redes Sociales
+
+Los conectores de redes sociales permiten a GENIA publicar contenido, programar publicaciones y obtener métricas de diferentes plataformas.
+
+#### Plataformas Soportadas
+- Facebook
+- Twitter
+- Instagram
+- LinkedIn
+
+#### Arquitectura
+- Clase base `SocialConnector` en `/src/lib/connectors/social.ts`
+- Factory pattern para crear conectores específicos según la plataforma
+- Integración con el MCP a través del `ExecutorMCP`
+
+#### Funcionalidades
+- Verificación de credenciales
+- Publicación de contenido (texto, imágenes, videos, enlaces)
+- Programación de publicaciones
+- Obtención de métricas (likes, comentarios, compartidos, alcance)
+
+#### Ejemplo de Uso
+```typescript
+// Crear un conector para Facebook
+const connector = await SocialConnectorFactory.createConnector(userId, 'facebook');
+
+// Publicar contenido
+const result = await connector.publishContent({
+  type: 'text',
+  text: 'Contenido de prueba',
+});
+
+// Obtener métricas
+const metrics = await connector.getPostMetrics(result.postId);
+```
+
+### Conectores de Email Marketing
+
+Los conectores de email marketing permiten a GENIA crear y enviar campañas, gestionar listas de suscriptores y obtener métricas de diferentes plataformas.
+
+#### Plataformas Soportadas
+- Mailchimp
+- SendGrid
+- ConvertKit
+- MailerLite
+
+#### Arquitectura
+- Clase base `EmailConnector` en `/src/lib/connectors/email.ts`
+- Factory pattern para crear conectores específicos según la plataforma
+- Integración con el MCP a través del `ExecutorMCP`
+
+#### Funcionalidades
+- Verificación de credenciales
+- Obtención de listas de suscriptores
+- Añadir/eliminar suscriptores
+- Creación y envío de campañas
+- Obtención de métricas (aperturas, clics, rebotes)
+
+#### Ejemplo de Uso
+```typescript
+// Crear un conector para Mailchimp
+const connector = await EmailConnectorFactory.createConnector(userId, 'mailchimp');
+
+// Obtener listas
+const lists = await connector.getLists();
+
+// Crear una campaña
+const result = await connector.createCampaign({
+  name: 'Campaña de prueba',
+  subject: 'Asunto de prueba',
+  fromName: 'GENIA',
+  fromEmail: 'noreply@genia.ai',
+  content: '<p>Contenido de prueba</p>',
+  listId: lists[0].id,
+});
+```
+
+### Integración con el MCP
+
+El `ExecutorMCP` extiende el MCP base para permitir la ejecución de tareas reales a través de los conectores.
+
+#### Arquitectura
+- Clase `ExecutorMCP` en `/src/lib/mcp/executor.ts`
+- Análisis de intenciones ejecutables
+- Delegación a conectores específicos
+- Registro de tareas ejecutadas
+
+#### Tipos de Tareas Ejecutables
+- `SOCIAL_POST`: Publicación en redes sociales
+- `SOCIAL_SCHEDULE`: Programación de publicaciones
+- `SOCIAL_METRICS`: Obtención de métricas de redes sociales
+- `EMAIL_CAMPAIGN`: Creación de campañas de email
+- `EMAIL_SUBSCRIBER`: Gestión de suscriptores
+- `EMAIL_METRICS`: Obtención de métricas de email
+
+#### Ejemplo de Uso
+```typescript
+// Analizar intención ejecutable
+const task = await executorMCP.analyzeExecutableIntent(
+  'Publica en Facebook: Contenido de prueba',
+  userId
+);
+
+// Ejecutar tarea
+const result = await executorMCP.executeTask(task);
+
+// Procesar con clones (integración completa)
+const response = await executorMCP.processWithClones(
+  'Publica en Facebook: Contenido de prueba',
+  userId
+);
+```
+
+### Panel de Administración
+
+El panel de administración permite a los usuarios gestionar sus credenciales y monitorear las tareas ejecutadas.
+
+#### Componentes Principales
+- Página principal en `/src/app/admin/page.tsx`
+- Gestión de credenciales de redes sociales en `/src/app/admin/social/[action]/page.tsx`
+- Gestión de credenciales de email marketing en `/src/app/admin/email/[action]/page.tsx`
+- Detalles de tareas ejecutadas en `/src/app/admin/tasks/[id]/page.tsx`
+
+#### Funcionalidades
+- Ver, añadir, editar y eliminar credenciales
+- Monitorear tareas ejecutadas
+- Ver detalles de tareas específicas
+- Reintentar tareas fallidas
+
+#### Acceso
+El panel está disponible en la ruta `/admin` y requiere autenticación.
+
+## Límites y Cuotas
+
+Los conectores tienen límites de uso según el plan de suscripción del usuario.
+
+### Límites por Plan
+- **Free**: Límites básicos para pruebas
+- **Basic**: Límites adecuados para pequeños negocios
+- **Pro**: Límites para negocios medianos con uso intensivo
+- **Enterprise**: Límites elevados o personalizados
+
+### Implementación
+- Verificación de límites antes de ejecutar tareas
+- Notificaciones cuando se acerca a los límites
+- Sugerencias para actualizar el plan cuando se alcanzan los límites
+
+### Documentación Detallada
+Ver `/docs/limites_cuotas.md` para información completa sobre límites y cuotas.
+
+## Pruebas
+
+### Pruebas de Conectores
+- Pruebas unitarias para cada conector en `/tests/connectors/`
+- Mocks para APIs externas
+- Verificación de manejo de errores
+- Cobertura de todas las funcionalidades principales
+
+### Ejecución de Pruebas
+```bash
+# Ejecutar todas las pruebas
+npm run test
+
+# Ejecutar pruebas específicas de conectores
+npm run test:connectors
+```
+
 ## Prioridades para Desarrollo Futuro
 
 1. **Alta Prioridad**:
-   - Implementación de conectores para ejecución de tareas reales
    - Mejora del sistema de análisis de intenciones
-   - Desarrollo del panel de administración
+   - Optimización de rendimiento y escalabilidad
+   - Ampliación de conectores a más plataformas
 
 2. **Media Prioridad**:
    - Mejoras de experiencia de usuario
-   - Implementación de análisis y métricas
-   - Optimización de rendimiento y escalabilidad
+   - Implementación de análisis y métricas avanzadas
+   - Desarrollo de plantillas predefinidas para tareas comunes
 
 3. **Baja Prioridad**:
    - Desarrollo de aplicación móvil
@@ -357,9 +595,12 @@ Todas las tablas tienen políticas RLS configuradas para garantizar que:
    - Integraciones con plataformas adicionales
 
 ## Documentación Adicional
-- Guía de Usuario: Disponible en `/docs/guia_usuario.md`
-- Configuración de Producción: Disponible en `/docs/configuracion_produccion.md`
-- Recomendaciones Finales: Disponible en `/docs/recomendaciones_finales.md`
+- Guía de Usuario de Conectores: `/docs/guia_usuario_conectores.md`
+- Proceso de Onboarding: `/docs/proceso_onboarding.md`
+- Plan de Rollback: `/docs/plan_rollback.md`
+- Programa de Beta Testers: `/docs/programa_beta_testers.md`
+- Límites y Cuotas: `/docs/limites_cuotas.md`
+- Configuración de Staging: `/staging/README.md`
 
 ## Contacto
 Para cualquier consulta sobre el desarrollo, contactar a:

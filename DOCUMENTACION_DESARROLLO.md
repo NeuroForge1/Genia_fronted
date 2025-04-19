@@ -198,6 +198,26 @@ El flujo de funcionamiento ideal de GENIA es:
 - ✅ Programa de beta testers
 - ✅ Configuración de límites y cuotas por plan de suscripción
 
+### 13. Mejoras Recientes Implementadas - COMPLETADO
+- ✅ Corrección de problemas de compatibilidad con Next.js 14
+  - Añadida directiva "use client" en componentes clave
+  - Resueltos conflictos de importación y exportación
+- ✅ Mejoras en la interfaz de usuario
+  - Rediseño de la página de login para mejor legibilidad
+  - Ajuste de proporciones entre imágenes y texto
+  - Mejora en la jerarquía tipográfica
+- ✅ Corrección de problemas de autenticación
+  - Implementación de almacenamiento de tokens en localStorage
+  - Mejora en la validación de correos electrónicos
+  - Soporte para dominios de prueba en entorno de desarrollo
+- ✅ Mejora en la persistencia de sesión
+  - Implementación de layout.tsx específico para el directorio de clones
+  - Optimización del middleware para rutas protegidas
+- ✅ Preparación para despliegue
+  - Creación de archivo vercel.json para el frontend
+  - Creación de archivo render.yaml para el backend
+  - Documentación detallada del proceso de despliegue
+
 ## Lo que falta por hacer
 
 ### 1. Mejora del Análisis de Intenciones - PENDIENTE
@@ -223,6 +243,251 @@ El flujo de funcionamiento ideal de GENIA es:
 - ⬜ Implementar notificaciones push
 - ⬜ Añadir soporte para comandos por voz en móvil
 - ⬜ Sincronizar datos entre plataformas
+
+## Pruebas Exhaustivas Antes del Despliegue
+
+Para garantizar que GENIA funcione correctamente en producción, es necesario realizar las siguientes pruebas exhaustivas antes del despliegue final:
+
+### 1. Pruebas de Autenticación y Gestión de Usuarios
+
+- **Registro de Usuarios**
+  - Verificar registro con diferentes dominios de correo (Gmail, Outlook, dominios corporativos)
+  - Probar validaciones de contraseña (longitud mínima, caracteres especiales)
+  - Verificar asignación correcta de créditos iniciales (25 créditos)
+  - Comprobar creación correcta del perfil en Supabase
+
+- **Inicio de Sesión**
+  - Verificar inicio de sesión con credenciales correctas
+  - Probar manejo de errores con credenciales incorrectas
+  - Comprobar redirección al dashboard después del login exitoso
+  - Verificar persistencia de sesión al navegar entre páginas
+
+- **Gestión de Perfiles**
+  - Verificar actualización de datos de perfil
+  - Probar cambio de contraseña
+  - Comprobar actualización de plan de suscripción
+  - Verificar visualización correcta de créditos disponibles
+
+### 2. Pruebas del Módulo Central de Procesos (MCP)
+
+- **Análisis de Intenciones**
+  - Probar reconocimiento de intenciones con diferentes tipos de consultas
+  - Verificar identificación correcta de entidades (nombres, fechas, cantidades)
+  - Comprobar manejo de consultas ambiguas
+  - Verificar detección de idioma y adaptación de respuestas
+
+- **Delegación a Clones**
+  - Verificar asignación correcta de consultas a cada clon especializado
+  - Probar transferencia de contexto entre el MCP y los clones
+  - Comprobar manejo de solicitudes que requieren múltiples clones
+  - Verificar priorización de tareas cuando hay varias solicitudes
+
+- **Gestión de Errores**
+  - Probar manejo de solicitudes mal formadas
+  - Verificar respuestas ante servicios externos no disponibles
+  - Comprobar recuperación ante fallos de conexión
+  - Verificar límites de tokens y manejo de respuestas truncadas
+
+### 3. Pruebas de Clones Especializados
+
+- **Clon Content**
+  - Verificar generación de artículos de blog con diferentes longitudes
+  - Probar creación de publicaciones para redes sociales (Twitter, LinkedIn, Instagram)
+  - Comprobar generación de emails para campañas de marketing
+  - Verificar adaptación del tono según la marca del usuario
+  - Probar generación de contenido SEO con palabras clave específicas
+
+- **Clon Ads**
+  - Verificar creación de anuncios para diferentes plataformas (Google, Facebook, Instagram)
+  - Probar generación de copy publicitario con diferentes objetivos (conversión, tráfico, reconocimiento)
+  - Comprobar recomendaciones de segmentación
+  - Verificar sugerencias de presupuesto y pujas
+  - Probar análisis de rendimiento de campañas existentes
+
+- **Clon CEO**
+  - Verificar análisis FODA (Fortalezas, Oportunidades, Debilidades, Amenazas)
+  - Probar generación de planes estratégicos
+  - Comprobar análisis de competencia
+  - Verificar recomendaciones de precios
+  - Probar sugerencias para optimización de procesos
+
+- **Clon Voice**
+  - Verificar reconocimiento de comandos por voz
+  - Probar generación de respuestas habladas
+  - Comprobar adaptación a diferentes acentos y dialectos
+  - Verificar transcripción de audio a texto
+  - Probar integración con asistentes virtuales
+
+- **Clon Funnel**
+  - Verificar diseño de embudos de conversión
+  - Probar análisis de puntos de abandono
+  - Comprobar recomendaciones para mejorar tasas de conversión
+  - Verificar integración con plataformas de landing pages
+  - Probar seguimiento de métricas clave (CTR, tasa de conversión, valor de cliente)
+
+- **Clon Calendar**
+  - Verificar programación de tareas y eventos
+  - Probar priorización de actividades
+  - Comprobar recordatorios y notificaciones
+  - Verificar gestión de reuniones y citas
+  - Probar optimización de horarios
+
+### 4. Pruebas de Integraciones Externas
+
+- **OpenAI**
+  - Verificar conexión con diferentes modelos (GPT-4, GPT-3.5)
+  - Probar manejo de límites de tokens
+  - Comprobar gestión de errores de la API
+  - Verificar tiempos de respuesta y optimizaciones
+
+- **Supabase**
+  - Verificar operaciones CRUD en todas las tablas
+  - Probar políticas de seguridad RLS (Row Level Security)
+  - Comprobar consultas complejas y joins
+  - Verificar manejo de transacciones
+  - Probar sincronización de datos en tiempo real
+
+- **Stripe**
+  - Verificar creación de clientes
+  - Probar proceso de checkout completo
+  - Comprobar gestión de suscripciones (creación, actualización, cancelación)
+  - Verificar procesamiento de webhooks
+  - Probar manejo de errores de pago
+  - Verificar facturación y recibos
+
+- **Twilio (WhatsApp)**
+  - Verificar envío de mensajes
+  - Probar recepción y procesamiento de mensajes entrantes
+  - Comprobar manejo de archivos multimedia
+  - Verificar integración con el MCP para procesar solicitudes
+  - Probar límites de mensajes y gestión de errores
+
+- **Email**
+  - Verificar envío de correos transaccionales (registro, recuperación de contraseña)
+  - Probar envío de newsletters y campañas
+  - Comprobar personalización de plantillas
+  - Verificar tasas de entrega y rebotes
+  - Probar programación de envíos
+
+### 5. Pruebas de Rendimiento y Escalabilidad
+
+- **Tiempos de Respuesta**
+  - Medir tiempos de respuesta del MCP bajo diferentes cargas
+  - Verificar tiempos de generación de contenido por los clones
+  - Comprobar latencia en integraciones con servicios externos
+  - Medir tiempos de carga de páginas en el frontend
+
+- **Concurrencia**
+  - Probar múltiples usuarios simultáneos
+  - Verificar manejo de solicitudes concurrentes al MCP
+  - Comprobar límites de conexiones a la base de datos
+  - Medir degradación de rendimiento bajo carga
+
+- **Consumo de Recursos**
+  - Monitorear uso de CPU y memoria
+  - Verificar consumo de ancho de banda
+  - Comprobar límites de almacenamiento
+  - Medir costos de API de terceros bajo diferentes volúmenes
+
+### 6. Pruebas de Seguridad
+
+- **Autenticación y Autorización**
+  - Verificar protección de rutas privadas
+  - Probar expiración y renovación de tokens
+  - Comprobar separación de datos entre usuarios
+  - Verificar políticas de contraseñas
+
+- **Protección de Datos**
+  - Verificar cifrado de datos sensibles
+  - Probar cumplimiento de GDPR y otras regulaciones
+  - Comprobar backups y recuperación de datos
+  - Verificar eliminación segura de datos de usuario
+
+- **Vulnerabilidades**
+  - Probar protección contra inyección SQL
+  - Verificar defensa contra XSS y CSRF
+  - Comprobar configuración de encabezados de seguridad
+  - Verificar protección contra ataques de fuerza bruta
+
+### 7. Pruebas de Interfaz de Usuario
+
+- **Responsividad**
+  - Verificar visualización en diferentes tamaños de pantalla (móvil, tablet, escritorio)
+  - Probar interacciones táctiles en dispositivos móviles
+  - Comprobar adaptación de layouts
+  - Verificar legibilidad de textos en diferentes dispositivos
+
+- **Accesibilidad**
+  - Verificar contraste de colores
+  - Probar navegación con teclado
+  - Comprobar compatibilidad con lectores de pantalla
+  - Verificar textos alternativos para imágenes
+
+- **Compatibilidad con Navegadores**
+  - Probar en Chrome, Firefox, Safari y Edge
+  - Verificar funcionamiento en diferentes versiones de navegadores
+  - Comprobar rendimiento en navegadores móviles
+  - Verificar carga de fuentes y estilos
+
+### 8. Pruebas de Flujos Completos de Usuario
+
+- **Onboarding de Nuevos Usuarios**
+  - Verificar flujo completo desde registro hasta primera tarea
+  - Probar tutorial inicial y guía de uso
+  - Comprobar configuración inicial de perfil
+  - Verificar asignación de créditos de bienvenida
+
+- **Creación y Publicación de Contenido**
+  - Verificar flujo desde solicitud hasta publicación en redes sociales
+  - Probar programación de publicaciones
+  - Comprobar edición y aprobación de contenido
+  - Verificar análisis post-publicación
+
+- **Gestión de Campañas Publicitarias**
+  - Verificar flujo desde creación hasta lanzamiento de campaña
+  - Probar monitoreo de rendimiento
+  - Comprobar optimización automática
+  - Verificar informes y análisis
+
+- **Análisis Estratégico de Negocio**
+  - Verificar flujo desde solicitud hasta entrega de informe
+  - Probar implementación de recomendaciones
+  - Comprobar seguimiento de KPIs
+  - Verificar actualizaciones periódicas
+
+### 9. Pruebas de Recuperación y Resiliencia
+
+- **Recuperación ante Fallos**
+  - Verificar comportamiento ante caídas de servicios externos
+  - Probar recuperación después de reinicios
+  - Comprobar persistencia de datos en caso de fallos
+  - Verificar mecanismos de retry para operaciones fallidas
+
+- **Manejo de Errores**
+  - Verificar mensajes de error amigables para el usuario
+  - Probar registro de errores para diagnóstico
+  - Comprobar notificaciones a administradores ante errores críticos
+  - Verificar planes de contingencia para servicios no disponibles
+
+### 10. Pruebas de Despliegue
+
+- **Entorno de Staging**
+  - Verificar despliegue completo en entorno de staging
+  - Probar migración de datos
+  - Comprobar configuración de variables de entorno
+  - Verificar integración con servicios externos en modo sandbox
+
+- **Proceso de Despliegue**
+  - Verificar scripts de despliegue automatizado
+  - Probar rollback en caso de fallos
+  - Comprobar tiempo de inactividad durante actualizaciones
+  - Verificar sincronización entre frontend y backend
+
+- **Monitoreo Post-Despliegue**
+  - Verificar alertas y notificaciones
+  - Probar dashboards de monitoreo
+  - Comprobar logs y diagnóstico
+  - Verificar métricas de rendimiento
 
 ## Configuración del Entorno de Desarrollo
 
@@ -412,196 +677,8 @@ Todas las tablas tienen políticas RLS configuradas para garantizar que:
 
 ### Conectores de Redes Sociales
 
-Los conectores de redes sociales permiten a GENIA publicar contenido, programar publicaciones y obtener métricas de diferentes plataformas.
-
-#### Plataformas Soportadas
-- Facebook
-- Twitter
-- Instagram
-- LinkedIn
-
-#### Arquitectura
-- Clase base `SocialConnector` en `/src/lib/connectors/social.ts`
-- Factory pattern para crear conectores específicos según la plataforma
-- Integración con el MCP a través del `ExecutorMCP`
-
-#### Funcionalidades
-- Verificación de credenciales
-- Publicación de contenido (texto, imágenes, videos, enlaces)
-- Programación de publicaciones
-- Obtención de métricas (likes, comentarios, compartidos, alcance)
-
-#### Ejemplo de Uso
-```typescript
-// Crear un conector para Facebook
-const connector = await SocialConnectorFactory.createConnector(userId, 'facebook');
-
-// Publicar contenido
-const result = await connector.publishContent({
-  type: 'text',
-  text: 'Contenido de prueba',
-});
-
-// Obtener métricas
-const metrics = await connector.getPostMetrics(result.postId);
-```
+Los conectores de redes sociales permiten a GENIA interactuar con diferentes plataformas para publicar contenido, programar publicaciones y obtener métricas.
 
 ### Conectores de Email Marketing
 
-Los conectores de email marketing permiten a GENIA crear y enviar campañas, gestionar listas de suscriptores y obtener métricas de diferentes plataformas.
-
-#### Plataformas Soportadas
-- Mailchimp
-- SendGrid
-- ConvertKit
-- MailerLite
-
-#### Arquitectura
-- Clase base `EmailConnector` en `/src/lib/connectors/email.ts`
-- Factory pattern para crear conectores específicos según la plataforma
-- Integración con el MCP a través del `ExecutorMCP`
-
-#### Funcionalidades
-- Verificación de credenciales
-- Obtención de listas de suscriptores
-- Añadir/eliminar suscriptores
-- Creación y envío de campañas
-- Obtención de métricas (aperturas, clics, rebotes)
-
-#### Ejemplo de Uso
-```typescript
-// Crear un conector para Mailchimp
-const connector = await EmailConnectorFactory.createConnector(userId, 'mailchimp');
-
-// Obtener listas
-const lists = await connector.getLists();
-
-// Crear una campaña
-const result = await connector.createCampaign({
-  name: 'Campaña de prueba',
-  subject: 'Asunto de prueba',
-  fromName: 'GENIA',
-  fromEmail: 'noreply@genia.ai',
-  content: '<p>Contenido de prueba</p>',
-  listId: lists[0].id,
-});
-```
-
-### Integración con el MCP
-
-El `ExecutorMCP` extiende el MCP base para permitir la ejecución de tareas reales a través de los conectores.
-
-#### Arquitectura
-- Clase `ExecutorMCP` en `/src/lib/mcp/executor.ts`
-- Análisis de intenciones ejecutables
-- Delegación a conectores específicos
-- Registro de tareas ejecutadas
-
-#### Tipos de Tareas Ejecutables
-- `SOCIAL_POST`: Publicación en redes sociales
-- `SOCIAL_SCHEDULE`: Programación de publicaciones
-- `SOCIAL_METRICS`: Obtención de métricas de redes sociales
-- `EMAIL_CAMPAIGN`: Creación de campañas de email
-- `EMAIL_SUBSCRIBER`: Gestión de suscriptores
-- `EMAIL_METRICS`: Obtención de métricas de email
-
-#### Ejemplo de Uso
-```typescript
-// Analizar intención ejecutable
-const task = await executorMCP.analyzeExecutableIntent(
-  'Publica en Facebook: Contenido de prueba',
-  userId
-);
-
-// Ejecutar tarea
-const result = await executorMCP.executeTask(task);
-
-// Procesar con clones (integración completa)
-const response = await executorMCP.processWithClones(
-  'Publica en Facebook: Contenido de prueba',
-  userId
-);
-```
-
-### Panel de Administración
-
-El panel de administración permite a los usuarios gestionar sus credenciales y monitorear las tareas ejecutadas.
-
-#### Componentes Principales
-- Página principal en `/src/app/admin/page.tsx`
-- Gestión de credenciales de redes sociales en `/src/app/admin/social/[action]/page.tsx`
-- Gestión de credenciales de email marketing en `/src/app/admin/email/[action]/page.tsx`
-- Detalles de tareas ejecutadas en `/src/app/admin/tasks/[id]/page.tsx`
-
-#### Funcionalidades
-- Ver, añadir, editar y eliminar credenciales
-- Monitorear tareas ejecutadas
-- Ver detalles de tareas específicas
-- Reintentar tareas fallidas
-
-#### Acceso
-El panel está disponible en la ruta `/admin` y requiere autenticación.
-
-## Límites y Cuotas
-
-Los conectores tienen límites de uso según el plan de suscripción del usuario.
-
-### Límites por Plan
-- **Free**: Límites básicos para pruebas
-- **Basic**: Límites adecuados para pequeños negocios
-- **Pro**: Límites para negocios medianos con uso intensivo
-- **Enterprise**: Límites elevados o personalizados
-
-### Implementación
-- Verificación de límites antes de ejecutar tareas
-- Notificaciones cuando se acerca a los límites
-- Sugerencias para actualizar el plan cuando se alcanzan los límites
-
-### Documentación Detallada
-Ver `/docs/limites_cuotas.md` para información completa sobre límites y cuotas.
-
-## Pruebas
-
-### Pruebas de Conectores
-- Pruebas unitarias para cada conector en `/tests/connectors/`
-- Mocks para APIs externas
-- Verificación de manejo de errores
-- Cobertura de todas las funcionalidades principales
-
-### Ejecución de Pruebas
-```bash
-# Ejecutar todas las pruebas
-npm run test
-
-# Ejecutar pruebas específicas de conectores
-npm run test:connectors
-```
-
-## Prioridades para Desarrollo Futuro
-
-1. **Alta Prioridad**:
-   - Mejora del sistema de análisis de intenciones
-   - Optimización de rendimiento y escalabilidad
-   - Ampliación de conectores a más plataformas
-
-2. **Media Prioridad**:
-   - Mejoras de experiencia de usuario
-   - Implementación de análisis y métricas avanzadas
-   - Desarrollo de plantillas predefinidas para tareas comunes
-
-3. **Baja Prioridad**:
-   - Desarrollo de aplicación móvil
-   - Soporte para idiomas adicionales
-   - Integraciones con plataformas adicionales
-
-## Documentación Adicional
-- Guía de Usuario de Conectores: `/docs/guia_usuario_conectores.md`
-- Proceso de Onboarding: `/docs/proceso_onboarding.md`
-- Plan de Rollback: `/docs/plan_rollback.md`
-- Programa de Beta Testers: `/docs/programa_beta_testers.md`
-- Límites y Cuotas: `/docs/limites_cuotas.md`
-- Configuración de Staging: `/staging/README.md`
-
-## Contacto
-Para cualquier consulta sobre el desarrollo, contactar a:
-- Equipo de Desarrollo de GENIA
+Los conectores de email marketing permiten a GENIA crear y enviar campañas, gestionar listas de suscriptores y analizar métricas de rendimiento.
